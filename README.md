@@ -1,10 +1,8 @@
 # Rocket BlackBox: Avionics & Flight Data Recorder
 
-[![Documentation](https://img.shields.io/badge/docs-rambros3d.github.io-blue.svg)](https://rambros3d.github.io/Rocket_BlackBox/)
+[![placeholder to be replaced with actual photo of payload](docs/assets/RAK3112-8-SM-I.png)](https://rambros3d.github.io/Rocket_BlackBox/)
 
-[![Rocket BlackBox Avionics Core (RAK3112)](docs/assets/RAK3112-8-SM-I.png)](https://rambros3d.github.io/Rocket_BlackBox/)
-
-🔗 **Interactive Documentation & Hardware Guide:** [https://rambros3d.github.io/Rocket_BlackBox/](https://rambros3d.github.io/Rocket_BlackBox/)
+### **Documentation:** [https://rambros3d.github.io/Rocket_BlackBox/](https://rambros3d.github.io/Rocket_BlackBox/)
 
 **Rocket BlackBox** is an open-source avionics payload and flight data recorder (FDR) designed for model rocketry and sounding rocket flights. Powered by the **RAK3112** module (Espressif ESP32-S3 + Semtech SX1262 LoRa), the system captures multi-sensor environmental telemetry, high-precision barometric altitude, and GNSS position.
 
@@ -12,7 +10,7 @@
 
 [![DSRSLV Phase 2](docs/assets/DSRSLV-P2.jpg)](https://www.sinsmefoundation.org/general-7-1)
 
-Rocket BlackBox is developed for the **DSRSLV (Dr. Sarvepalli Radhakrishnan Satellite Launch Vehicle)** sounding rocket initiative, spearheaded by the **[SINSME Foundation](https://www.sinsmefoundation.org/general-7-1)**.
+Rocket BlackBox is developed for the **DSRSLV** sounding rocket initiative, spearheaded by the **[SINSME Foundation](https://www.sinsmefoundation.org/general-7-1)**.
 
 The **DSRSLV Phase 2 (P2)** mission aims for an apogee of approximately 5 km, carrying student atmospheric payloads and flight instrumentation to foster hands-on space science and aerospace education.
 
