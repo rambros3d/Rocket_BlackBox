@@ -8,6 +8,16 @@
 
 **Rocket BlackBox** is an open-source avionics payload and flight data recorder (FDR) designed for model rocketry and sounding rocket flights. Powered by the **RAK3112** module (Espressif ESP32-S3 + Semtech SX1262 LoRa), the system captures multi-sensor environmental telemetry, high-precision barometric altitude, and GNSS position.
 
+## Mission: DSRSLV (SINSME Foundation)
+
+[![DSRSLV Phase 2](docs/assets/DSRSLV-P2.jpg)](https://www.sinsmefoundation.org/general-7-1)
+
+Rocket BlackBox is developed for the **DSRSLV (Dr. Sarvepalli Radhakrishnan Satellite Launch Vehicle)** sounding rocket initiative, spearheaded by the **[SINSME Foundation](https://www.sinsmefoundation.org/general-7-1)**.
+
+The **DSRSLV Phase 2 (P2)** mission aims for an apogee of approximately 5 km, carrying student atmospheric payloads and flight instrumentation to foster hands-on space science and aerospace education.
+
+🔗 **Mission Details:** [SINSME Foundation DSRSLV Project](https://www.sinsmefoundation.org/general-7-1)
+
 ---
 
 ## EasyEDA Educator Program
