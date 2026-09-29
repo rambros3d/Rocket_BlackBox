@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rocket BLACKBOX - Hardware Description</title>
+        <style>
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    Helvetica, Arial, sans-serif;
+                line-height: 1.6;
+                color: #24292f;
+                max-width: 980px;
+                margin: 0 auto;
+                padding: 32px 24px;
+                background-color: #ffffff;
+            }
+            h1 {
+                border-bottom: 2px solid #eaecef;
+                padding-bottom: 12px;
+                font-size: 2rem;
+                margin-bottom: 16px;
+            }
+            h2 {
+                border-bottom: 1px solid #eaecef;
+                padding-bottom: 8px;
+                margin-top: 36px;
+                margin-bottom: 16px;
+                font-size: 1.5rem;
+            }
+            h3 {
+                margin-top: 24px;
+                margin-bottom: 12px;
+                font-size: 1.25rem;
+            }
+            p,
+            ul,
+            ol {
+                margin-bottom: 16px;
+            }
+            li {
+                margin-bottom: 6px;
+            }
+            code {
+                font-family:
+                    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+                    monospace;
+                font-size: 0.9em;
+                background-color: #f6f8fa;
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: 16px 0 24px 0;
+                font-size: 0.95rem;
+            }
+            th,
+            td {
+                border: 1px solid #d0d7de;
+                padding: 10px 14px;
+                text-align: left;
+            }
+            th {
+                background-color: #f6f8fa;
+                font-weight: 600;
+            }
+            tr:nth-child(even) {
+                background-color: #fcfcfc;
+            }
+            hr {
+                border: 0;
+                height: 1px;
+                background-color: #d0d7de;
+                margin: 32px 0;
+            }
+            .component-img {
+                display: block;
+                max-width: 320px;
+                width: 100%;
+                height: auto;
+                margin: 12px 0 8px 0;
+                border: 1px solid #d0d7de;
+                border-radius: 6px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Rocket BLACKBOX — Avionics &amp; Flight Data Recorder</h1>
+
+        <p>
+            <strong>Rocket BLACKBOX</strong> is an open-source avionics and
+            environmental data recorder for model rocketry and sounding rocket
+            payloads.
+        </p>
+
+        <p>
+            Built around the <strong>RAK3112</strong> module (ESP32-S3 + SX1262
+            LoRa), the board carries a multi-sensor array across two independent
+            I2C buses, a 4-bit SDMMC slot for flight logging,
+            multi-constellation GNSS with a 1PPS timing line, and a push-button
+            soft-latch power circuit with USB battery management.
+        </p>
+
+        <hr />
+
+        <h2>Sensor Data &amp; Measurement Capabilities</h2>
+        <p>Sensors are split across two I2C buses and a dedicated GNSS UART.</p>
+
+        <table
+            border="1"
+            cellpadding="8"
+            cellspacing="0"
+            style="border-collapse: collapse; width: 100%; margin-bottom: 24px"
+        >
+            <thead>
+                <tr style="background-color: #f2f2f2">
+                    <th style="width: 25%; text-align: left">Primary Role</th>
+                    <th style="width: 50%; text-align: left">Data Types</th>
+                    <th style="width: 25%; text-align: left">
+                        Hardware Interface
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <strong>Barometric Altimeter</strong><br />
+                        <small>MS5607</small>
+                    </td>
+                    <td>
+                        <strong>Barometric Pressure:</strong> 10 to 1200 hPa
+                        (Resolution: 0.01 hPa / ~20 cm altitude, 24-bit ΔΣ ADC,
+                        factory PROM calibration with CRC4 checksum)<br />
+                        <strong>Temperature:</strong> −40°C to +85°C
+                        (Resolution: &lt; 0.01°C, Accuracy: ±1.0°C)
+                    </td>
+                    <td>
+                        I2C Bus 1<br />
+                        <code>0x77</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>CO2, Temperature &amp; Humidity</strong><br />
+                        <small>Sensirion SCD40</small>
+                    </td>
+                    <td>
+                        <strong>CO2 Concentration:</strong> 400 to 5000 ppm
+                        (Resolution: 1 ppm, Accuracy: ±(40 ppm + 5% of
+                        reading))<br />
+                        <strong>Temperature:</strong> −10°C to +60°C
+                        (Resolution: 0.01°C, 16-bit, Accuracy: ±0.8°C)<br />
+                        <strong>Relative Humidity:</strong> 0% to 100% RH
+                        (Resolution: 0.01% RH, 16-bit, Accuracy: ±6% RH)
+                    </td>
+                    <td>
+                        I2C Bus 1<br />
+                        <code>0x62</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>VOC &amp; NOx Gas Index</strong><br />
+                        <small>Sensirion SGP41</small>
+                    </td>
+                    <td>
+                        <strong>VOC Gas Index:</strong> 1 to 500 (16-bit raw
+                        ticks, limit &lt; 1 to 1000 ppm VOC)<br />
+                        <strong>NOx Gas Index:</strong> 1 to 500 (16-bit raw
+                        ticks, detection limit 0.05 to 10 ppm NO2)<br />
+                        <strong>Compensation:</strong> Accepts external humidity
+                        and temperature for baseline drift correction
+                    </td>
+                    <td>
+                        I2C Bus 1<br />
+                        <code>0x59</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Ambient &amp; Solar Illuminance</strong><br />
+                        <small>TSL25911FN</small>
+                    </td>
+                    <td>
+                        <strong>Dual Optical Channels:</strong> CH0 Full
+                        Spectrum (300–1100 nm) &amp; CH1 Infrared (500–1100
+                        nm)<br />
+                        <strong>Dynamic Range:</strong> 600,000,000:1 (188 µlux
+                        up to 88,000 lux, 16-bit ADC)<br />
+                        <strong>Programmable Gain:</strong> 1×, 25×, 428×, 9876×
+                        with 100–600 ms integration timing
+                    </td>
+                    <td>
+                        I2C Bus 1<br />
+                        <code>0x29</code> (Device ID: <code>0x50</code>)
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>UV Index &amp; Ambient Light</strong><br />
+                        <small>LTR-390UV-01</small>
+                    </td>
+                    <td>
+                        <strong>Ambient Light (ALS):</strong> 0.01 to 64,000 lux
+                        (spectral peak 550 nm, photopic human eye response)<br />
+                        <strong>UV Spectrum:</strong> UVA / UVB (280–400 nm), 13
+                        to 20-bit resolution, UV Index 0 to 12+
+                    </td>
+                    <td>
+                        I2C Bus 1<br />
+                        <code>0x53</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>9-DOF IMU &amp; Attitude</strong><br />
+                        <small>Bosch BNO055</small>
+                    </td>
+                    <td>
+                        <strong>Accelerometer:</strong> ±2g to ±16g (14-bit, 3
+                        axes)<br />
+                        <strong>Gyroscope:</strong> ±125°/s to ±2000°/s (16-bit,
+                        3 axes)<br />
+                        <strong>Magnetometer:</strong> ±1300 µT (X, Y), ±2500 µT
+                        (Z) (16-bit, 0.3 µT resolution, 3 axes)<br />
+                        <strong>Sensor Fusion:</strong> On-chip ARM Cortex-M0
+                        coprocessor outputs quaternions (w, x, y, z) and Euler
+                        angles (0–360° @ 0.0625°)
+                    </td>
+                    <td>
+                        I2C Bus 2<br />
+                        <code>0x28</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>GNSS &amp; Time Sync</strong><br />
+                        <small>Beitian BE-166</small>
+                    </td>
+                    <td>
+                        <strong>Position &amp; Velocity:</strong>
+                        GPS, Galileo, BeiDou, QZSS — 2.0 m CEP horizontal, 0.05
+                        m/s velocity, up to 50,000 m altitude<br />
+                        <strong>1PPS Timing:</strong> Hardware pulse, 20 ns RMS
+                    </td>
+                    <td>
+                        UART (115200 baud)<br />
+                        Hardware 1PPS line
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Auxiliary Environmental</strong><br />
+                        <small>Bosch BME680</small>
+                    </td>
+                    <td>
+                        <strong>Barometric Pressure:</strong> 300 to 1100 hPa
+                        (Resolution: 0.18 Pa / ~17 cm, Accuracy: ±0.12 hPa)<br />
+                        <strong>Temperature &amp; Humidity:</strong> −40°C to
+                        +85°C (Resolution: 0.01°C), 0% to 100% RH (Resolution:
+                        0.008% RH)<br />
+                        <strong>Gas Resistance:</strong> 10 Ω to 60 MΩ MOX
+                        sensor for bVOC detection
+                    </td>
+                    <td>
+                        I2C Bus 1<br />
+                        <code>0x76</code>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr />
+
+        <h2>Circuit info</h2>
+
+        <p>
+            The schematic is organized as one block per subsystem. Environmental
+            sensors share one I2C bus, the IMU has its own dedicated I2C bus,
+            GNSS uses UART plus a hardware timing line, and logging uses 4-bit
+            SDMMC.
+        </p>
+
+        <h3>RAK3112 MCU + LoRa Module</h3>
+        <img class="component-img" src="assets/RAK3112-8-SM-I.png"
+            alt="RAK3112 module" />
+        <p>
+            Central controller combining an ESP32-S3 with an SX1262 LoRa
+            transceiver. It hosts the USB connection, both I2C buses, the GNSS
+            UART, and the SDMMC interface. Dedicated buttons handle boot-mode
+            entry and reset, a resistor divider feeds battery voltage to the
+            ADC for monitoring, and separate lines hold power on, sense the
+            power button, and drive the status LED.
+        </p>
+
+        <h3>Charger &amp; Power Control circuit</h3>
+        <img class="component-img" src="assets/BQ24075RGTR.png"
+            alt="BQ24075 charger IC" />
+        <p>
+            Built around the BQ24075 LiPo charger with power-path management,
+            so the board runs from USB when present and seamlessly falls back
+            to battery. Charge and power-good LEDs show charger state. A
+            dual-MOSFET push-button soft-latch holds the charger output
+            enabled after the button is released; the MCU keeps itself powered
+            through a hold line and can shut the board down by releasing it.
+            A manual cutoff switch fully disconnects the battery, and a
+            divided-down tap of the button lets the MCU detect presses.
+        </p>
+
+        <h3>Voltage regulator</h3>
+        <img class="component-img" src="assets/AIC1221-33GY3TR.png"
+            alt="AIC1221 3.3 V LDO regulator" />
+        <p>
+            A 3.3 V LDO that powers the MCU, sensors, GNSS, and SD card from
+            the charger output, keeping noisy supply switching away from the
+            analog sensor rails.
+        </p>
+
+        <h3>SD Card</h3>
+        <img class="component-img" src="assets/472192001.png"
+            alt="MicroSD card connector" />
+        <p>
+            MicroSD slot wired in 4-bit SDMMC mode for high-speed flight
+            logging, with pull-ups on clock, command, and all four data lines.
+        </p>
+
+        <h3>GNSS receiver</h3>
+        <img class="component-img" src="assets/BE-I66.png"
+            alt="Beitian BE-166 GNSS module" />
+        <p>
+            Beitian multi-constellation receiver with integrated antenna. It
+            streams position over UART and provides a hardware 1-pulse-per-second
+            output for precise time synchronization. Pin headers break out the
+            serial and timing signals.
+        </p>
+
+        <h3>9-axis IMU sensor</h3>
+        <img class="component-img" src="assets/BNO055.png"
+            alt="BNO055 9-axis IMU" />
+        <p>
+            BNO055 with on-chip sensor fusion outputting absolute orientation
+            as quaternions and Euler angles. It sits alone on the second I2C
+            bus to avoid address conflicts with the environmental sensors, with
+            a separate interrupt line for motion and data-ready events.
+        </p>
+
+        <h3>Humidity, Temperature Pressure Sensor</h3>
+        <img class="component-img" src="assets/BME680.png"
+            alt="BME680 environmental sensor" />
+        <p>
+            BME680 auxiliary environmental sensor for pressure, temperature,
+            humidity, and gas resistance.
+        </p>
+
+        <h3>Altitude sensor</h3>
+        <img class="component-img" src="assets/MS560702.png"
+            alt="MS5607 barometric pressure sensor" />
+        <p>
+            MS5607 barometric pressure and temperature sensor used as the
+            primary altimeter, strapped for I2C operation.
+        </p>
+
+        <h3>CO2 sensor</h3>
+        <img class="component-img" src="assets/SCD40-D-R1.png"
+            alt="SCD40 CO2 sensor" />
+        <p>
+            SCD40 photoacoustic CO2 sensor, also reporting temperature and
+            relative humidity. Its core and heater supplies are tied together
+            for 3.3 V operation as recommended for this use.
+        </p>
+
+        <h3>VOC &amp; NOx sensor</h3>
+        <img class="component-img" src="assets/SGP41-D-R4.png"
+            alt="SGP41 gas sensor" />
+        <p>
+            SGP41 metal-oxide gas sensor reporting VOC and NOx indices.
+            Requires temperature and humidity compensation from the other
+            sensors to correct baseline drift.
+        </p>
+
+        <h3>Ambient Light Sensor</h3>
+        <img class="component-img" src="assets/TSL25911FN.png"
+            alt="TSL25911FN ambient light sensor" />
+        <p>
+            TSL25911FN dual-diode sensor measuring full-spectrum and infrared
+            light separately so visible illuminance can be derived.
+        </p>
+
+        <h3>UV Sensor</h3>
+        <img class="component-img" src="assets/LTR-390UV-01.png"
+            alt="LTR-390 UV sensor" />
+        <p>
+            LTR-390 sensor measuring UVA/UVB for UV index plus ambient visible
+            light, with an interrupt output for threshold events.
+        </p>
+
+        <hr />
+
+        <h2>Pin mapping</h2>
+
+        <table
+            border="1"
+            cellpadding="8"
+            cellspacing="0"
+            style="border-collapse: collapse; width: 100%; margin-bottom: 24px"
+        >
+            <thead>
+                <tr style="background-color: #f2f2f2">
+                    <th style="width: 20%; text-align: left">MCU Pin</th>
+                    <th style="width: 25%; text-align: left">Sensor Pin</th>
+                    <th style="width: 55%; text-align: left">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background-color: #eaecef">
+                    <td colspan="3">
+                        <strong>Power &amp; Housekeeping</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 40</strong></td>
+                    <td><code>PWR_EN</code></td>
+                    <td>
+                        Power hold latch output. Driven HIGH by MCU to maintain
+                        DC-DC / LDO power alive; pulled LOW to shut down.
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 39</strong></td>
+                    <td><code>PUSH_SW</code></td>
+                    <td>
+                        Push-button state detection input. Reads user button
+                        clicks after power-on.
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 9</strong></td>
+                    <td><code>VADC</code></td>
+                    <td>
+                        Battery voltage monitor (ADC1 Channel 8, 1/2 resistor
+                        divider 5.1 kΩ / 5.1 kΩ).
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 45</strong></td>
+                    <td><code>LED</code></td>
+                    <td>Active-high status and heartbeat LED indicator.</td>
+                </tr>
+                <tr style="background-color: #eaecef">
+                    <td colspan="3">
+                        <strong
+                            >I2C Bus 1 - Environmental &amp; Optical
+                            Sensors</strong
+                        >
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 10</strong></td>
+                    <td><code>SDA1</code></td>
+                    <td>
+                        Environmental I2C Bus 1 serial data line (connected to
+                        MS5607, SCD40, SGP41, TSL25911FN, LTR-390, BME680 with
+                        2.2 kΩ pull-up to 3.3V).
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 11</strong></td>
+                    <td><code>SCL1</code></td>
+                    <td>
+                        Environmental I2C Bus 1 serial clock line (connected to
+                        MS5607, SCD40, SGP41, TSL25911FN, LTR-390, BME680 with
+                        2.2 kΩ pull-up to 3.3V).
+                    </td>
+                </tr>
+                <tr style="background-color: #eaecef">
+                    <td colspan="3">
+                        <strong
+                            >I2C Bus 2 - Inertial Navigation (BNO055)</strong
+                        >
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 2</strong></td>
+                    <td><code>SDA2</code></td>
+                    <td>
+                        Inertial navigation I2C Bus 2 serial data line for
+                        BNO055 (with 2.2 kΩ pull-up to 3.3V).
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 1</strong></td>
+                    <td><code>SCL2</code></td>
+                    <td>
+                        Inertial navigation I2C Bus 2 serial clock line for
+                        BNO055 (with 2.2 kΩ pull-up to 3.3V).
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 4</strong></td>
+                    <td><code>INT</code></td>
+                    <td>
+                        Hardware motion detection and data-ready interrupt line
+                        from BNO055.
+                    </td>
+                </tr>
+                <tr style="background-color: #eaecef">
+                    <td colspan="3"><strong>GNSS - Beitian BE-166</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 42</strong></td>
+                    <td><code>GNSS_TXD</code></td>
+                    <td>
+                        UART receiver input (MCU RX) listening to
+                        multi-constellation NMEA and UBX stream at 115200 baud
+                        from BE-166.
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 41</strong></td>
+                    <td><code>GNSS_RXD</code></td>
+                    <td>
+                        UART transmitter output (MCU TX) driving bidirectional
+                        UBX/NMEA configuration and query commands to BE-166.
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 38</strong></td>
+                    <td><code>GNSS_IPPS</code></td>
+                    <td>
+                        Microsecond-accurate hardware 1 pulse-per-second (1PPS)
+                        synchronization interrupt line from BE-166.
+                    </td>
+                </tr>
+                <tr style="background-color: #eaecef">
+                    <td colspan="3">
+                        <strong>MicroSD - 4-Bit SDMMC Interface</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 14</strong></td>
+                    <td><code>CLK</code></td>
+                    <td>High-speed 4-bit parallel SDMMC clock line.</td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 21</strong></td>
+                    <td><code>CMD</code></td>
+                    <td>
+                        High-speed 4-bit parallel SDMMC command and response
+                        line (with 10 kΩ pull-up to 3.3V).
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 13</strong></td>
+                    <td><code>DAT0</code></td>
+                    <td>
+                        High-speed 4-bit parallel SDMMC data line bit 0 (with 10
+                        kΩ pull-up to 3.3V).
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 12</strong></td>
+                    <td><code>DAT1</code></td>
+                    <td>
+                        High-speed 4-bit parallel SDMMC data line bit 1 (with 10
+                        kΩ pull-up to 3.3V).
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 17</strong></td>
+                    <td><code>DAT2</code></td>
+                    <td>
+                        High-speed 4-bit parallel SDMMC data line bit 2 (with 10
+                        kΩ pull-up to 3.3V).
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 18</strong></td>
+                    <td><code>DAT3</code> / <code>CD</code></td>
+                    <td>
+                        High-speed 4-bit parallel SDMMC data line bit 3 / card
+                        detection (with 10 kΩ pull-up to 3.3V).
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr />
+
+        <h2>EasyEDA Educator Program</h2>
+        <img class="component-img" src="assets/easyeda-educator-program.png"
+            alt="EasyEDA Educator Program" />
+        <p>
+            This project's PCB &amp; PCBA was sponsored by EasyEDA and
+            fabricated by JLCPCB. Project was completed in October 2026.
+        </p>
+    </body>
+</html>

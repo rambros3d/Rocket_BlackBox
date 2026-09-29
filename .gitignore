@@ -1,0 +1,7 @@
+.*/
+!.github/
+
+# Logs and temp files
+serial-log.txt
+*.log
+.DS_Store
