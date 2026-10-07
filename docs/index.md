@@ -181,7 +181,13 @@ Over-the-air communication was validated in live bidirectional tests between the
 
 ### Quick Guide: Flashing & Operating the Waveshare USB-to-LoRa Adapter
 
-To interface the **Waveshare USB-to-LoRa-HF (TCXO)** adapter with the Rocket BlackBox payload, the stock AT-command firmware must be replaced with the open-source **MeshCore KISS TNC** firmware. This gives direct byte-level RF control and low-latency packet streaming via USB serial.
+To interface the **[Waveshare USB-to-LoRa-HF](https://www.waveshare.com/wiki/USB-TO-LoRa-HF)** adapter with the Rocket BlackBox payload, the stock AT-command firmware must be replaced with the open-source **[MeshCore KISS TNC firmware](https://github.com/neohiro/meshcore-waveshare-usb-lora)**. This gives direct byte-level RF control, standard KISS framing, and low-latency packet streaming via USB serial.
+
+#### Useful References & Repositories
+- 📦 **Firmware Repository:** [neohiro/meshcore-waveshare-usb-lora](https://github.com/neohiro/meshcore-waveshare-usb-lora)
+- 📖 **Waveshare Hardware Wiki:** [Waveshare USB-to-LoRa-HF Product Documentation](https://www.waveshare.com/wiki/USB-TO-LoRa-HF)
+- ⚡ **Flashing Tool:** [pyOCD Python SWD Debugger](https://pyocd.io/) or [OpenOCD](https://openocd.org/)
+- 📡 **Payload Radio Library:** [jgromes/RadioLib](https://github.com/jgromes/RadioLib)
 
 #### Step 1: Hardware Connections (ST-Link V2 SWD)
 
@@ -189,19 +195,25 @@ Open the plastic casing of the Waveshare dongle to access the 4-pin SWD programm
 
 ![Waveshare USB-to-LoRa-HF SWD Pinout and ST-Link V2 Connection](assets/waveshare-usb-lora-custom.jpg)
 
-| Waveshare Header Pin | ST-Link V2 Programmer Pin |
-|---|---|
-| `3V3` | `3.3V` (Target VCC) |
-| `SWDIO` | `SWDIO` |
-| `SWCLK` | `SWCLK` |
-| `GND` | `GND` |
+| Waveshare Header Pin | ST-Link V2 Programmer Pin | Description |
+|---|---|---|
+| `3V3` | `3.3V` | Target MCU VCC (GD32F103) |
+| `SWDIO` | `SWDIO` | Serial Wire Data Input/Output |
+| `SWCLK` | `SWCLK` | Serial Wire Clock |
+| `GND` | `GND` | Common Ground |
 
 #### Step 2: Compile Firmware with TCXO Enabled
 
-Build the binary from the repository with the `WITH_TCXO=1` build flag to activate MCU pin `PD1` which powers the SX1262 TCXO crystal:
+Clone the [meshcore-waveshare-usb-lora](https://github.com/neohiro/meshcore-waveshare-usb-lora) repository with submodules:
 
 ```bash
-cd usb-to-lora-firmwares/meshcore-waveshare-usb-lora/firmware
+git clone --recurse-submodules https://github.com/neohiro/meshcore-waveshare-usb-lora.git
+cd meshcore-waveshare-usb-lora/firmware
+```
+
+Build the binary with the `WITH_TCXO=1` build flag to activate MCU pin `PD1` which powers the SX1262 TCXO crystal:
+
+```bash
 make WITH_TCXO=1 clean
 make WITH_TCXO=1
 ```
@@ -210,21 +222,24 @@ This generates `firmware.bin` linked for flash base address `0x08000000`.
 
 #### Step 3: Flash the GD32F103 MCU
 
-Flash the compiled firmware using **pyOCD** or **OpenOCD** targeting `stm32f103c8`:
+Flash the compiled firmware using [pyOCD](https://pyocd.io/) targeting the STM32F103/GD32F103 core:
 
 ```bash
-# Probe MCU target
+# Install pyOCD (if not already installed)
+pip install pyocd
+
+# Probe MCU target via connected ST-Link V2
 pyocd list
 
 # Erase and program flash memory at 0x08000000
 pyocd flash -t stm32f103c8 -a 0x08000000 firmware.bin
 ```
 
-Disconnect the ST-Link and plug the dongle directly into the host PC's USB port (enumerates as `/dev/ttyACM0` via onboard CH343 USB-to-UART bridge).
+Disconnect the ST-Link and plug the dongle directly into the host PC's USB port (enumerates as `/dev/ttyACM0` via the onboard CH343 USB-to-UART bridge).
 
 #### Step 4: Real-Time Telemetry & Link Testing
 
-Run the telemetry receiver or test scripts from the `flight_dashboard/` directory:
+Run the telemetry receiver or test scripts from the repository's `flight_dashboard/` directory:
 
 ```bash
 # 1. Run live ground telemetry receiver & CSV logger:
