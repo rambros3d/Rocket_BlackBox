@@ -1,0 +1,16 @@
+---
+---
+@import "{{ site.theme }}";
+
+// Responsive image constraint: max 400px height, max 100% width
+.markdown-body img {
+  max-height: 400px;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 12px 0 16px 0;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+}
