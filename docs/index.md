@@ -5,8 +5,8 @@ Built around the **RAK3112** module (Espressif ESP32-S3 + Semtech SX1262 LoRa), 
 ### Source files: [rambros3d/Rocket_BlackBox](https://github.com/rambros3d/Rocket_BlackBox)
 
 - Firmware: [`arduino`](https://github.com/rambros3d/Rocket_BlackBox/tree/main/test_firmware)
-- 3D Model: [`fusion360`](https://github.com/rambros3d/Rocket_BlackBox/tree/main/mechanical)
-- PCB: [`oshwlab`](https://oshwlab.com/shreeramlive/project_dmtpicmk/edit?from=workspace&registerLang=en)
+- 3D Model: [`fusion360`](https://a360.co/47nZXGg)
+- PCB: [`oshwlab`](https://oshwlab.com/shreeramlive/project_dmtpicmk)
 
 ---
 
@@ -157,6 +157,19 @@ LTR-390 sensor measuring UVA/UVB for UV index plus ambient visible light, with a
 
 ---
 
+## Workarounds
+
+During hardware bring-up and bench testing of the Rev 1.0 PCB, the onboard Bosch ICs did not work:
+
+- **Bosch BNO055 (9-DOF IMU):** The `nRESET` pin (Pin 11) was left unconnected / floating as per the datasheet. Maybe the internal weak pull-up is insufficient to overcome the floating state, the internal processor failed to respond (NACK) over I2C.
+- **Bosch BME680 (Auxiliary Environmental Sensor):** This one suffered a hard physical short between the SDA1 line and GND, requiring physical isolation via removal of its 0Ω series resistor.
+
+### External IMU Workaround
+- To bypass the onboard IC issues and restore full 9-DOF inertial and attitude sensing for flight, an **external BNO055 module** was connected to the system as a hardware workaround.
+- Environmental data acquisition is handled by the primary MS5607 altimeter, Sensirion SCD40, and SGP41 sensors.
+
+---
+
 ## LoRa RF Telemetry Link & Ground Station Verification
 
 The avionics system features long-range digital telemetry enabling real-time flight monitoring, apogee confirmation, GPS tracking, and recovery beaconing.
@@ -194,6 +207,7 @@ To interface the **[Waveshare USB-to-LoRa-HF](https://www.waveshare.com/wiki/USB
 #### Step 1: Hardware Connections (ST-Link V2 SWD)
 
 Open the plastic casing of the Waveshare dongle to access the 4-pin SWD programming header on the PCB:
+The bottom cover seems to be stuck with the PCB so I didnt remove that.
 
 ![Waveshare USB-to-LoRa-HF SWD Pinout and ST-Link V2 Connection](assets/waveshare-usb-lora-custom.jpg)
 
