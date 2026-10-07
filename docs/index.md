@@ -1,20 +1,22 @@
-# Rocket BLACKBOX - Avionics & Flight Data Recorder
-
 **Rocket BLACKBOX** is an open-source avionics and environmental flight data recorder (FDR) designed for model rocketry and sounding rocket payloads.
 
 Built around the **RAK3112** module (Espressif ESP32-S3 + Semtech SX1262 LoRa), the board carries a multi-sensor array across two independent I2C buses, a 4-bit SDMMC slot for high-rate flight logging, multi-constellation GNSS with a 1PPS hardware timing line, long-range digital telemetry, and a push-button soft-latch power circuit with USB battery management.
 
+### Source files: [rambros3d/Rocket_BlackBox](https://github.com/rambros3d/Rocket_BlackBox)
+
+- Firmware: [`arduino`](https://github.com/rambros3d/Rocket_BlackBox/tree/main/test_firmware)
+- 3D Model: [`fusion360`](https://github.com/rambros3d/Rocket_BlackBox/tree/main/mechanical)
+- PCB: [`oshwlab`](https://oshwlab.com/shreeramlive/project_dmtpicmk/edit?from=workspace&registerLang=en)
+
 ---
 
 ## Mission: DSRSLV (SINSME Foundation)
-
-[![DSRSLV Phase 2](assets/DSRSLV-P2.jpg)](https://www.sinsmefoundation.org/general-7-1)
-
-Rocket BlackBox is developed for the **DSRSLV** sounding rocket initiative, spearheaded by the **[SINSME Foundation](https://www.sinsmefoundation.org/general-7-1)**.
+ 
+Rocket BlackBox is developed for the **DSRSLV** sounding rocket initiative, spearheaded by the **[SINSME Foundation](https://www.sinsmefoundation.org)**.
 
 The **DSRSLV Phase 2 (P2)** mission aims for an apogee of approximately 5 km, carrying student atmospheric payloads and flight instrumentation to foster hands-on space science and aerospace education.
 
-🔗 **Mission Details:** [SINSME Foundation DSRSLV Project](https://www.sinsmefoundation.org/general-7-1)
+**Mission Details:** [SINSME Foundation DSRSLV Project](https://www.sinsmefoundation.org/general-7-1)
 
 ---
 
@@ -184,23 +186,16 @@ Over-the-air communication was validated in live bidirectional tests between the
 To interface the **[Waveshare USB-to-LoRa-HF](https://www.waveshare.com/wiki/USB-TO-LoRa-HF)** adapter with the Rocket BlackBox payload, the stock AT-command firmware must be replaced with the open-source **[MeshCore KISS TNC firmware](https://github.com/neohiro/meshcore-waveshare-usb-lora)**. This gives direct byte-level RF control, standard KISS framing, and low-latency packet streaming via USB serial.
 
 #### Useful References & Repositories
-- 📦 **Firmware Repository:** [neohiro/meshcore-waveshare-usb-lora](https://github.com/neohiro/meshcore-waveshare-usb-lora)
-- 📖 **Waveshare Hardware Wiki:** [Waveshare USB-to-LoRa-HF Product Documentation](https://www.waveshare.com/wiki/USB-TO-LoRa-HF)
-- ⚡ **Flashing Tool:** [pyOCD Python SWD Debugger](https://pyocd.io/) or [OpenOCD](https://openocd.org/)
-- 📡 **Payload Radio Library:** [jgromes/RadioLib](https://github.com/jgromes/RadioLib)
+- **Firmware Repository:** [neohiro/meshcore-waveshare-usb-lora](https://github.com/neohiro/meshcore-waveshare-usb-lora)
+- **Waveshare Hardware Wiki:** [Waveshare USB-to-LoRa-HF Product Documentation](https://www.waveshare.com/wiki/USB-TO-LoRa-HF)
+- **Flashing Tool:** [pyOCD Python SWD Debugger](https://pyocd.io/) or [OpenOCD](https://openocd.org/)
+- **Payload Radio Library:** [jgromes/RadioLib](https://github.com/jgromes/RadioLib)
 
 #### Step 1: Hardware Connections (ST-Link V2 SWD)
 
 Open the plastic casing of the Waveshare dongle to access the 4-pin SWD programming header on the PCB:
 
 ![Waveshare USB-to-LoRa-HF SWD Pinout and ST-Link V2 Connection](assets/waveshare-usb-lora-custom.jpg)
-
-| Waveshare Header Pin | ST-Link V2 Programmer Pin | Description |
-|---|---|---|
-| `3V3` | `3.3V` | Target MCU VCC (GD32F103) |
-| `SWDIO` | `SWDIO` | Serial Wire Data Input/Output |
-| `SWCLK` | `SWCLK` | Serial Wire Clock |
-| `GND` | `GND` | Common Ground |
 
 #### Step 2: Compile Firmware with TCXO Enabled
 

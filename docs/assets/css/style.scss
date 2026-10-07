@@ -2,6 +2,18 @@
 ---
 @import "{{ site.theme }}";
 
+// Force light mode colors everywhere (ignores OS dark mode preference)
+:root {
+  color-scheme: light;
+}
+
+body,
+.markdown-body {
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #24292f !important;
+}
+
 // Responsive image constraint: max 400px height, max 100% width
 .markdown-body img {
   max-height: 400px;
