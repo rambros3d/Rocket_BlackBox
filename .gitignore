@@ -5,3 +5,10 @@
 serial-log.txt
 *.log
 .DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# External USB-to-LoRa firmware repositories (cloned sub-repos)
+usb-to-lora-firmwares/

@@ -40,3 +40,15 @@ constexpr gpio_num_t PIN_SD_DAT0    = GPIO_NUM_13;
 constexpr gpio_num_t PIN_SD_DAT1    = GPIO_NUM_12;
 constexpr gpio_num_t PIN_SD_DAT2    = GPIO_NUM_17;
 constexpr gpio_num_t PIN_SD_DAT3    = GPIO_NUM_18;
+
+// ==========================================
+// RAK3112 Internal SX1262 LoRa Transceiver
+// ==========================================
+constexpr gpio_num_t PIN_LORA_SCK    = GPIO_NUM_5;   // SPI Clock
+constexpr gpio_num_t PIN_LORA_MISO   = GPIO_NUM_3;   // SPI MISO
+constexpr gpio_num_t PIN_LORA_MOSI   = GPIO_NUM_6;   // SPI MOSI
+constexpr gpio_num_t PIN_LORA_NSS    = GPIO_NUM_7;   // SPI Chip Select (NSS)
+constexpr gpio_num_t PIN_LORA_RST    = GPIO_NUM_8;   // SX1262 NRESET
+constexpr gpio_num_t PIN_LORA_BUSY   = GPIO_NUM_48;  // SX1262 BUSY Status
+constexpr gpio_num_t PIN_LORA_DIO1   = GPIO_NUM_47;  // SX1262 DIO1 Interrupt
+constexpr gpio_num_t PIN_LORA_ANT_SW = GPIO_NUM_4;   // RF Antenna Switch Power (High = Active)

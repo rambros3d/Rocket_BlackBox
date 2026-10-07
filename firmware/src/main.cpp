@@ -7,6 +7,7 @@
 #include "sd_diagnostics.h"
 #include "gps_diagnostics.h"
 #include "flash_storage_mgr.h"
+#include "lora_diagnostic.h"
 
 static bool s_streamingMode = false;
 static uint32_t s_lastStreamMs = 0;
@@ -33,6 +34,7 @@ void printMenu() {
     Serial.println("  [0] Toggle Flash CSV Flight Logging");
     Serial.println("  [r] Remount / Refresh USB MSC Drive");
     Serial.println("  [f] Format 12MB Flash Storage Partition");
+    Serial.println("  [l] Open LoRa RF Transceiver Diagnostic Menu");
     Serial.println("  [h] Show this menu");
     Serial.println("--------------------------------------------------");
     Serial.print("> ");
@@ -51,6 +53,7 @@ void runFullPost() {
     SDDiagnosticsManager::runDiagnostics(Serial);
     GPSDiagnosticsManager::runDiagnostics(Serial);
     FlashStorageManager::printDiagnostics(Serial);
+    LoRaDiagnostic::runHardwareCheck();
 
     Serial.println("##################################################");
     Serial.println("               END OF POST REPORT                 ");
@@ -121,6 +124,9 @@ void setup() {
 
     // 10. Initialize BE-166 GPS UART and 1PPS interrupt
     GPSDiagnosticsManager::initGPS(Serial);
+
+    // 11. Initialize SX1262 LoRa Transceiver
+    LoRaDiagnostic::init();
 
     Serial.println("\nAll subsystems initialized.");
     printMenu();
@@ -231,6 +237,12 @@ void loop() {
             case 'F':
                 Serial.println();
                 FlashStorageManager::formatStorage(Serial);
+                printMenu();
+                break;
+            case 'l':
+            case 'L':
+                Serial.println();
+                LoRaDiagnostic::showMenu();
                 printMenu();
                 break;
             case 'h':
