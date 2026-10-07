@@ -1,4 +1,4 @@
-# Rocket BLACKBOX — Avionics & Flight Data Recorder
+# Rocket BLACKBOX - Avionics & Flight Data Recorder
 
 **Rocket BLACKBOX** is an open-source avionics and environmental flight data recorder (FDR) designed for model rocketry and sounding rocket payloads.
 
@@ -30,7 +30,7 @@ Sensors are split across two I2C buses, an internal SPI bus for LoRa RF telemetr
 | **Ambient & Solar Illuminance**<br><small>TSL25911FN</small> | **Dual Optical Channels:** CH0 Full Spectrum (300–1100 nm) & CH1 Infrared (500–1100 nm)<br>**Dynamic Range:** 600,000,000:1 (188 µlux up to 88,000 lux, 16-bit ADC)<br>**Programmable Gain:** 1×, 25×, 428×, 9876× with 100–600 ms integration timing | I2C Bus 1<br>`0x29` (Device ID: `0x50`) |
 | **UV Index & Ambient Light**<br><small>LTR-390UV-01</small> | **Ambient Light (ALS):** 0.01 to 64,000 lux (spectral peak 550 nm, photopic human eye response)<br>**UV Spectrum:** UVA / UVB (280–400 nm), 13 to 20-bit resolution, UV Index 0 to 12+ | I2C Bus 1<br>`0x53` |
 | **9-DOF IMU & Attitude**<br><small>Bosch BNO055</small> | **Accelerometer:** ±2g to ±16g (14-bit, 3 axes)<br>**Gyroscope:** ±125°/s to ±2000°/s (16-bit, 3 axes)<br>**Magnetometer:** ±1300 µT (X, Y), ±2500 µT (Z) (16-bit, 0.3 µT resolution, 3 axes)<br>**Sensor Fusion:** On-chip ARM Cortex-M0 coprocessor outputs quaternions (w, x, y, z) and Euler angles (0–360° @ 0.0625°) | I2C Bus 2<br>`0x28` |
-| **GNSS & Time Sync**<br><small>Beitian BE-166</small> | **Position & Velocity:** GPS, Galileo, BeiDou, QZSS — 2.0 m CEP horizontal, 0.05 m/s velocity, up to 50,000 m altitude<br>**1PPS Timing:** Hardware pulse, 20 ns RMS | UART (115200 baud)<br>Hardware 1PPS line (`GPIO 38`) |
+| **GNSS & Time Sync**<br><small>Beitian BE-166</small> | **Position & Velocity:** GPS, Galileo, BeiDou, QZSS - 2.0 m CEP horizontal, 0.05 m/s velocity, up to 50,000 m altitude<br>**1PPS Timing:** Hardware pulse, 20 ns RMS | UART (115200 baud)<br>Hardware 1PPS line (`GPIO 38`) |
 | **Auxiliary Environmental**<br><small>Bosch BME680</small> | **Barometric Pressure:** 300 to 1100 hPa (Resolution: 0.18 Pa / ~17 cm, Accuracy: ±0.12 hPa)<br>**Temperature & Humidity:** −40°C to +85°C (Resolution: 0.01°C), 0% to 100% RH (Resolution: 0.008% RH)<br>**Gas Resistance:** 10 Ω to 60 MΩ MOX sensor for bVOC detection | I2C Bus 1<br>`0x76` |
 | **LoRa RF Telemetry & Link**<br><small>Semtech SX1262 (RAK3112)</small> | **Frequency:** 868.000 MHz (HF Band)<br>**Modulation:** LoRa (BW: 125 kHz, SF7, CR 4/5, Sync: `0x12`, 16 Preamble, CRC on)<br>**RF Performance:** +22 dBm max TX power, −125 dBm sensitivity, DIO2 RF switch, TCXO 1.6V oscillator<br>**Data Rate & Latency:** ~5.47 kbps over-the-air, ~226 ms RTT bidirectional ping-pong, 0.0% packet loss tested | Internal SPI Bus<br>(SCK=5, MISO=3, MOSI=6, NSS=7, RST=8, BUSY=48, DIO1=47, ANT_SW=4) |
 
@@ -125,25 +125,25 @@ LTR-390 sensor measuring UVA/UVB for UV index plus ambient visible light, with a
 | **GPIO 39** | `PUSH_SW` | Push-button state detection input. Reads user button clicks after power-on. |
 | **GPIO 9** | `VADC` | Battery voltage monitor (ADC1 Channel 8, 1/2 resistor divider 5.1 kΩ / 5.1 kΩ). |
 | **GPIO 45** | `LED` | Active-high status and heartbeat LED indicator. |
-| **I2C Bus 1 — Environmental & Optical Sensors** | | |
+| **I2C Bus 1 - Environmental & Optical Sensors** | | |
 | **GPIO 10** | `SDA1` | Environmental I2C Bus 1 serial data line (connected to MS5607, SCD40, SGP41, TSL25911FN, LTR-390, BME680 with 2.2 kΩ pull-up to 3.3V). |
 | **GPIO 11** | `SCL1` | Environmental I2C Bus 1 serial clock line (connected to MS5607, SCD40, SGP41, TSL25911FN, LTR-390, BME680 with 2.2 kΩ pull-up to 3.3V). |
-| **I2C Bus 2 — Inertial Navigation (BNO055)** | | |
+| **I2C Bus 2 - Inertial Navigation (BNO055)** | | |
 | **GPIO 2** | `SDA2` | Inertial navigation I2C Bus 2 serial data line for BNO055 (with 2.2 kΩ pull-up to 3.3V). |
 | **GPIO 1** | `SCL2` | Inertial navigation I2C Bus 2 serial clock line for BNO055 (with 2.2 kΩ pull-up to 3.3V). |
 | **GPIO 4** | `INT` | Hardware motion detection and data-ready interrupt line from BNO055. |
-| **GNSS — Beitian BE-166** | | |
+| **GNSS - Beitian BE-166** | | |
 | **GPIO 42** | `GNSS_TXD` | UART receiver input (MCU RX) listening to multi-constellation NMEA and UBX stream at 115200 baud from BE-166. |
 | **GPIO 41** | `GNSS_RXD` | UART transmitter output (MCU TX) driving bidirectional UBX/NMEA configuration and query commands to BE-166. |
 | **GPIO 38** | `GNSS_IPPS` | Microsecond-accurate hardware 1 pulse-per-second (1PPS) synchronization interrupt line from BE-166. |
-| **MicroSD — 4-Bit SDMMC Interface** | | |
+| **MicroSD - 4-Bit SDMMC Interface** | | |
 | **GPIO 14** | `CLK` | High-speed 4-bit parallel SDMMC clock line. |
 | **GPIO 21** | `CMD` | High-speed 4-bit parallel SDMMC command and response line (with 10 kΩ pull-up to 3.3V). |
 | **GPIO 13** | `DAT0` | High-speed 4-bit parallel SDMMC data line bit 0 (with 10 kΩ pull-up to 3.3V). |
 | **GPIO 12** | `DAT1` | High-speed 4-bit parallel SDMMC data line bit 1 (with 10 kΩ pull-up to 3.3V). |
 | **GPIO 17** | `DAT2` | High-speed 4-bit parallel SDMMC data line bit 2 (with 10 kΩ pull-up to 3.3V). |
 | **GPIO 18** | `DAT3` / `CD` | High-speed 4-bit parallel SDMMC data line bit 3 / card detection (with 10 kΩ pull-up to 3.3V). |
-| **LoRa Transceiver — Semtech SX1262 (RAK3112 Internal)** | | |
+| **LoRa Transceiver - Semtech SX1262 (RAK3112 Internal)** | | |
 | **GPIO 5** | `LORA_SCK` | Internal SPI clock line for SX1262. |
 | **GPIO 3** | `LORA_MISO` | Internal SPI Master-In-Slave-Out line for SX1262. |
 | **GPIO 6** | `LORA_MOSI` | Internal SPI Master-Out-Slave-In line for SX1262. |
