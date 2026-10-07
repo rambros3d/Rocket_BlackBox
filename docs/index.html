@@ -76,6 +76,21 @@
                 background-color: #d0d7de;
                 margin: 32px 0;
             }
+            pre {
+                background-color: #f6f8fa;
+                border: 1px solid #d0d7de;
+                border-radius: 6px;
+                padding: 12px 16px;
+                overflow-x: auto;
+                font-size: 0.88em;
+                line-height: 1.45;
+                margin-bottom: 16px;
+            }
+            pre code {
+                background-color: transparent;
+                padding: 0;
+                border-radius: 0;
+            }
             .component-img {
                 display: block;
                 max-width: 320px;
@@ -84,6 +99,16 @@
                 margin: 12px 0 8px 0;
                 border: 1px solid #d0d7de;
                 border-radius: 6px;
+            }
+            .guide-img {
+                display: block;
+                max-width: 100%;
+                width: 100%;
+                height: auto;
+                margin: 16px 0 20px 0;
+                border: 1px solid #d0d7de;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
             }
         </style>
     </head>
@@ -270,6 +295,22 @@
                         <code>0x76</code>
                     </td>
                 </tr>
+                <tr>
+                    <td>
+                        <strong>LoRa RF Telemetry &amp; Link</strong><br />
+                        <small>Semtech SX1262 (RAK3112)</small>
+                    </td>
+                    <td>
+                        <strong>Frequency:</strong> 868.000 MHz (HF Band)<br />
+                        <strong>Modulation:</strong> LoRa (BW: 125 kHz, SF7, CR 4/5, Sync: <code>0x12</code>, 16 Preamble, CRC on)<br />
+                        <strong>RF Performance:</strong> +22 dBm max TX power, −125 dBm sensitivity, DIO2 RF switch, TCXO 1.6V oscillator<br />
+                        <strong>Data Rate &amp; Latency:</strong> ~5.47 kbps over-the-air, ~226 ms RTT bidirectional ping-pong, 0.0% packet loss tested
+                    </td>
+                    <td>
+                        Internal SPI Bus<br />
+                        (SCK=5, MISO=3, MOSI=6, NSS=7, RST=8, BUSY=48, DIO1=47, ANT_SW=4)
+                    </td>
+                </tr>
             </tbody>
         </table>
 
@@ -288,12 +329,21 @@
         <img class="component-img" src="assets/RAK3112-8-SM-I.png"
             alt="RAK3112 module" />
         <p>
-            Central controller combining an ESP32-S3 with an SX1262 LoRa
-            transceiver. It hosts the USB connection, both I2C buses, the GNSS
-            UART, and the SDMMC interface. Dedicated buttons handle boot-mode
-            entry and reset, a resistor divider feeds battery voltage to the
-            ADC for monitoring, and separate lines hold power on, sense the
-            power button, and drive the status LED.
+            Central controller combining an ESP32-S3 dual-core microcontroller with an
+            integrated Semtech SX1262 LoRa transceiver. It hosts the USB connection, both
+            I2C buses, the GNSS UART, the SDMMC interface, and the RF telemetry frontend.
+            The internal SX1262 links via internal SPI with TCXO frequency stabilization
+            powered at 1.6V (DIO3) and an active RF switch powered by GPIO 4. Dedicated
+            buttons handle boot-mode entry and reset, a resistor divider feeds battery
+            voltage to the ADC for monitoring, and separate lines hold power on, sense
+            the power button, and drive the status LED.
+        </p>
+        <p>
+            <strong>Ground Station Integration:</strong> The payload links wirelessly to a
+            compact <strong>Waveshare USB-to-LoRa-HF (TCXO)</strong> dongle flashed with
+            custom KISS TNC modem firmware (GD32F103 MCU). Over-the-air communication operates
+            at 868.000 MHz with full-duplex CSMA bypass for rapid packet turnaround (~226 ms
+            round-trip ping-pong, 0.0% packet loss).
         </p>
 
         <h3>Charger &amp; Power Control circuit</h3>
@@ -584,8 +634,176 @@
                         detection (with 10 kΩ pull-up to 3.3V).
                     </td>
                 </tr>
+                <tr style="background-color: #eaecef">
+                    <td colspan="3">
+                        <strong>LoRa Transceiver - Semtech SX1262 (RAK3112 Internal)</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 5</strong></td>
+                    <td><code>LORA_SCK</code></td>
+                    <td>Internal SPI clock line for SX1262.</td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 3</strong></td>
+                    <td><code>LORA_MISO</code></td>
+                    <td>Internal SPI Master-In-Slave-Out line for SX1262.</td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 6</strong></td>
+                    <td><code>LORA_MOSI</code></td>
+                    <td>Internal SPI Master-Out-Slave-In line for SX1262.</td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 7</strong></td>
+                    <td><code>LORA_NSS</code></td>
+                    <td>Internal SPI Slave Select (Active Low) for SX1262.</td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 8</strong></td>
+                    <td><code>LORA_RST</code></td>
+                    <td>Hardware active-low reset line for SX1262.</td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 48</strong></td>
+                    <td><code>LORA_BUSY</code></td>
+                    <td>Hardware BUSY status line from SX1262 (monitored prior to SPI commands).</td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 47</strong></td>
+                    <td><code>LORA_DIO1</code></td>
+                    <td>Multi-purpose packet RX / TX done interrupt line from SX1262.</td>
+                </tr>
+                <tr>
+                    <td><strong>GPIO 4</strong></td>
+                    <td><code>LORA_ANT_SW</code></td>
+                    <td>RF Antenna Switch power gate (driven HIGH to activate RF frontend).</td>
+                </tr>
             </tbody>
         </table>
+
+        <hr />
+
+        <h2>LoRa RF Telemetry Link &amp; Ground Station Verification</h2>
+        <p>
+            The avionics system features long-range digital telemetry enabling real-time flight monitoring,
+            apogee confirmation, GPS tracking, and recovery beaconing.
+        </p>
+
+        <h3>RF Modulation &amp; Architecture</h3>
+        <table
+            border="1"
+            cellpadding="8"
+            cellspacing="0"
+            style="border-collapse: collapse; width: 100%; margin-bottom: 24px"
+        >
+            <thead>
+                <tr style="background-color: #f2f2f2">
+                    <th style="width: 30%; text-align: left">Parameter</th>
+                    <th style="width: 70%; text-align: left">Operational Setting</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Carrier Frequency</strong></td>
+                    <td><code>868.000 MHz</code> (HF Band, matched across payload and ground station)</td>
+                </tr>
+                <tr>
+                    <td><strong>Modulation</strong></td>
+                    <td>LoRa (Bandwidth: <code>125.0 kHz</code>, Spreading Factor: <code>SF7</code>, Coding Rate: <code>4/5</code>)</td>
+                </tr>
+                <tr>
+                    <td><strong>Sync Word</strong></td>
+                    <td><code>0x12</code> (MeshCore / RadioLib standard)</td>
+                </tr>
+                <tr>
+                    <td><strong>Preamble Length</strong></td>
+                    <td><code>16 symbols</code> with hardware CRC enabled</td>
+                </tr>
+                <tr>
+                    <td><strong>Oscillator Stability</strong></td>
+                    <td>TCXO (Temperature Compensated Crystal Oscillator) enabled on both nodes (1.6V on SX1262 DIO3)</td>
+                </tr>
+                <tr>
+                    <td><strong>Ground Receiver</strong></td>
+                    <td>Waveshare USB-to-LoRa-HF (TCXO) dongle with GD32F103 MCU running custom KISS TNC firmware</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Hardware Verification &amp; Benchmark Results</h3>
+        <p>
+            Over-the-air communication was validated in live bidirectional tests between the rocket payload
+            and the Waveshare ground station receiver:
+        </p>
+        <ul>
+            <li><strong>Packet Loss:</strong> <strong>0.00%</strong> (50/50 consecutive downlink telemetry packets captured; 10/10 bidirectional ping-pong frames verified).</li>
+            <li><strong>Round-Trip Turnaround (RTT):</strong> <strong>216 ms – 226 ms</strong> average full-duplex ping-pong latency.</li>
+            <li><strong>Signal Quality:</strong> RSSI of <strong>−40.5 dBm</strong> with SNR of <strong>+12.6 dB</strong> (&gt; 20 dB above the SX1262 SF7 demodulation limit), proving a clear link with zero symbol slippage.</li>
+            <li><strong>Effective Data Rate:</strong> ~5.47 kbps physical over-the-air bitrate; supports flight telemetry streaming at 2 to 5 Hz.</li>
+        </ul>
+
+        <h3>Quick Guide: Flashing &amp; Operating the Waveshare USB-to-LoRa Adapter</h3>
+        <p>
+            To interface the <strong>Waveshare USB-to-LoRa-HF (TCXO)</strong> adapter with the Rocket BlackBox payload,
+            the stock AT-command firmware must be replaced with the open-source <strong>MeshCore KISS TNC</strong> firmware.
+            This gives direct byte-level RF control and low-latency packet streaming via USB serial.
+        </p>
+
+        <h4>Step 1: Hardware Connections (ST-Link V2 SWD)</h4>
+        <p>
+            Open the plastic casing of the Waveshare dongle to access the 4-pin SWD programming header on the PCB:
+        </p>
+        <img class="guide-img" src="assets/waveshare-usb-lora-custom.jpg"
+            alt="Waveshare USB-to-LoRa-HF SWD Pinout and ST-Link V2 Connection" />
+        <table
+            border="1"
+            cellpadding="6"
+            cellspacing="0"
+            style="border-collapse: collapse; width: 60%; margin-bottom: 16px"
+        >
+            <thead>
+                <tr style="background-color: #f2f2f2">
+                    <th style="width: 50%; text-align: left">Waveshare Header Pin</th>
+                    <th style="width: 50%; text-align: left">ST-Link V2 Programmer Pin</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><code>3V3</code></td><td><code>3.3V</code> (Target VCC)</td></tr>
+                <tr><td><code>SWDIO</code></td><td><code>SWDIO</code></td></tr>
+                <tr><td><code>SWCLK</code></td><td><code>SWCLK</code></td></tr>
+                <tr><td><code>GND</code></td><td><code>GND</code></td></tr>
+            </tbody>
+        </table>
+
+        <h4>Step 2: Compile Firmware with TCXO Enabled</h4>
+        <p>
+            Build the binary from the repository with the <code>WITH_TCXO=1</code> build flag to activate MCU pin <code>PD1</code>
+            which powers the SX1262 TCXO crystal:
+        </p>
+        <pre><code>cd usb-to-lora-firmwares/meshcore-waveshare-usb-lora/firmware
+make WITH_TCXO=1 clean
+make WITH_TCXO=1</code></pre>
+        <p>This generates <code>firmware.bin</code> linked for flash base address <code>0x08000000</code>.</p>
+
+        <h4>Step 3: Flash the GD32F103 MCU</h4>
+        <p>
+            Flash the compiled firmware using <strong>pyOCD</strong> or <strong>OpenOCD</strong> targeting <code>stm32f103c8</code>:
+        </p>
+        <pre><code># Probe MCU target
+pyocd list
+
+# Erase and program flash memory at 0x08000000
+pyocd flash -t stm32f103c8 -a 0x08000000 firmware.bin</code></pre>
+        <p>Disconnect the ST-Link and plug the dongle directly into the host PC's USB port (enumerates as <code>/dev/ttyACM0</code> via onboard CH343 USB-to-UART bridge).</p>
+
+        <h4>Step 4: Real-Time Telemetry &amp; Link Testing</h4>
+        <p>Run the telemetry receiver or test scripts from the <code>flight_dashboard/</code> directory:</p>
+        <pre><code># 1. Run live ground telemetry receiver &amp; CSV logger:
+python flight_dashboard/lora_ground_receiver.py --port /dev/ttyACM0 --log flight_log.csv
+
+# 2. Run automated bidirectional ping-pong test against payload:
+python flight_dashboard/test_rf_ping_pong.py</code></pre>
 
         <hr />
 
