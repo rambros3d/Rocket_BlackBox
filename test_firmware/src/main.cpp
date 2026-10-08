@@ -28,6 +28,7 @@ void printMenu() {
     Serial.println("  [6] Query Power & Battery Health");
     Serial.println("  [7] Probe BNO055 Electrical Lines & Ping");
     Serial.println("  [e] Run BNO055 Edge-Case Recovery Suite");
+    Serial.println("  [i] Re-initialize BNO055 & Enter NDOF Fusion");
     Serial.println("  [8] Query 12MB Flash & USB MSC Storage");
     Serial.println("  [9] List Flash Files (/ffat)");
     Serial.println("  [d] Dump Latest Flight Log CSV");
@@ -196,6 +197,12 @@ void loop() {
             case 'E':
                 Serial.println();
                 IMUSensorManager::runEdgeCaseDiagnostics(Serial);
+                printMenu();
+                break;
+            case 'i':
+            case 'I':
+                Serial.println();
+                IMUSensorManager::initIMU(Serial);
                 printMenu();
                 break;
             case '8':

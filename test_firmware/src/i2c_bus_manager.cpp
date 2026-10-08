@@ -5,9 +5,9 @@ void I2CBusManager::initBuses() {
     Wire.begin(PIN_I2C1_SDA, PIN_I2C1_SCL, 100000);
     Wire.setTimeOut(50);
 
-    // Bus 2: Dedicated IMU (Pins 2, 1)
-    Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 100000);
-    Wire1.setTimeOut(50);
+    // Bus 2: Dedicated IMU (Pins 2, 1) at 50 kHz for reliable BNO055 clock-stretching
+    Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 50000);
+    Wire1.setTimeOut(100);
 }
 
 bool I2CBusManager::isDevicePresent(TwoWire& bus, uint8_t address) {

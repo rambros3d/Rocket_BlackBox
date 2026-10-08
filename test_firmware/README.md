@@ -40,6 +40,7 @@ Select a diagnostic command:
   [6] Query Power & Battery Health
   [7] Probe BNO055 Electrical Lines & Ping
   [e] Run BNO055 Edge-Case Recovery Suite
+  [i] Re-initialize BNO055 & Enter NDOF Fusion
   [8] Query 12MB Flash & USB MSC Storage
   [9] List Flash Files (/ffat)
   [d] Dump Latest Flight Log CSV

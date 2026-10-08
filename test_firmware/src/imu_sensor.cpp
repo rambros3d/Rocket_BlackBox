@@ -14,6 +14,11 @@ bool IMUSensorManager::initIMU(Print& out) {
         delay(20);
     }
 
+    // Ensure Wire1 is operating at 50 kHz with 100 ms timeout for clock stretching
+    Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 50000);
+    Wire1.setTimeOut(100);
+    delay(10);
+
     // Quick address ping check before launching Adafruit retry loop
     Wire1.beginTransmission(0x28);
     bool has28 = (Wire1.endTransmission() == 0);
@@ -29,19 +34,13 @@ bool IMUSensorManager::initIMU(Print& out) {
 
     _activeAddr = has28 ? 0x28 : 0x29;
     _bno = Adafruit_BNO055(55, _activeAddr, &Wire1);
-    if (!_bno.begin()) {
+    if (!_bno.begin(OPERATION_MODE_NDOF)) {
         out.printf("  [FAIL] BNO055 begin() failed at 0x%02X.\n", _activeAddr);
         _diagResults.detected = false;
         _initialized = false;
         return false;
     }
-
-    _diagResults.detected = true;
-    _diagResults.address = _activeAddr;
-    _initialized = true;
-
-    // Use external crystal if available on hardware
-    _bno.setExtCrystalUse(true);
+    delay(50);
 
     // Read revision info
     Adafruit_BNO055::adafruit_bno055_rev_info_t rev;
@@ -52,11 +51,30 @@ bool IMUSensorManager::initIMU(Print& out) {
     _diagResults.swRev = rev.sw_rev;
     _diagResults.bootloaderRev = rev.bl_rev;
 
-    // Read self test & system status
-    _bno.getSystemStatus(&_diagResults.sysStatus, &_diagResults.selfTestResult, &_diagResults.sysError);
-    _diagResults.selfTestPassed = ((_diagResults.selfTestResult & 0x0F) == 0x0F);
+    // Use rock-solid internal oscillator and explicitly enforce NDOF mode
+    _bno.setMode(OPERATION_MODE_CONFIG);
+    delay(25);
+    _bno.setExtCrystalUse(false);
+    delay(25);
+    _bno.setMode(OPERATION_MODE_NDOF);
+    delay(50);
 
-    out.printf("  [OK] BNO055 initialized at Addr 0x%02X\n", _activeAddr);
+    // Verify operating mode
+    uint8_t activeMode = _bno.getMode();
+    out.printf("  [INIT] Mode verified: 0x%02X (%s)\n", activeMode,
+               (activeMode == OPERATION_MODE_NDOF) ? "NDOF Fusion Active" : "Mode switch failed");
+
+    // Read live status
+    _bno.getSystemStatus(&_diagResults.sysStatus, &_diagResults.selfTestResult, &_diagResults.sysError);
+    out.printf("  [INIT] Status: 0x%02X (Error: 0x%02X)\n", _diagResults.sysStatus, _diagResults.sysError);
+
+    _diagResults.selfTestPassed = ((_diagResults.selfTestResult & 0x0F) == 0x0F);
+    _diagResults.detected = true;
+    _diagResults.address = _activeAddr;
+    _initialized = true;
+
+    out.printf("  [OK] BNO055 operational at Addr 0x%02X (SysStatus: 0x%02X, Error: 0x%02X)\n",
+               _activeAddr, _diagResults.sysStatus, _diagResults.sysError);
     return true;
 }
 
@@ -356,11 +374,16 @@ void IMUSensorManager::probeIMULines(Print& out) {
             }
         }
 
-        // Restore standard pins for Wire1
+        // Restore standard pins for Wire1 at 50 kHz
         Wire1.end();
         delay(10);
-        Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 100000);
-        Wire1.setTimeOut(50);
+        Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 50000);
+        Wire1.setTimeOut(100);
+
+        if (cid28 || cid29) {
+            out.println("\n>>> Re-initializing BNO055 into NDOF fusion mode after probe <<<");
+            initIMU(out);
+        }
     }
     out.println("--------------------------------------------------");
 }
@@ -382,6 +405,10 @@ void IMUSensorManager::runDiagnostics(Print& out) {
     out.printf("  Chip IDs:        Accel=0x%02X, Mag=0x%02X, Gyro=0x%02X\n",
                _diagResults.accelId, _diagResults.magId, _diagResults.gyroId);
     
+    // Refresh live self-test & system status
+    _bno.getSystemStatus(&_diagResults.sysStatus, &_diagResults.selfTestResult, &_diagResults.sysError);
+    _diagResults.selfTestPassed = ((_diagResults.selfTestResult & 0x0F) == 0x0F);
+
     // Self-test results
     out.printf("  Self-Test (0x%02X): %s\n", _diagResults.selfTestResult,
                _diagResults.selfTestPassed ? "ALL PASS" : "DEGRADED");
@@ -396,6 +423,38 @@ void IMUSensorManager::runDiagnostics(Print& out) {
     uint8_t sys, gyro, accel, mag;
     _bno.getCalibration(&sys, &gyro, &accel, &mag);
     out.printf("  Calibration (0-3): Sys=%u, Gyro=%u, Accel=%u, Mag=%u\n", sys, gyro, accel, mag);
+
+    uint8_t currentMode = _bno.getMode();
+    if (currentMode != OPERATION_MODE_NDOF) {
+        _bno.setMode(OPERATION_MODE_NDOF);
+        delay(40);
+        currentMode = _bno.getMode();
+    }
+
+    out.printf("  Operating Mode:  0x%02X (%s)\n", currentMode,
+               (currentMode == OPERATION_MODE_NDOF) ? "NDOF Fusion" :
+               (currentMode == OPERATION_MODE_IMUPLUS) ? "IMUPLUS 6-DOF" :
+               (currentMode == OPERATION_MODE_CONFIG) ? "CONFIG (Idle)" : "Other");
+
+    // Direct read Euler angle registers (0x1A - 0x1F)
+    Wire1.beginTransmission(_activeAddr);
+    Wire1.write(0x1A);
+    uint8_t wErrE = Wire1.endTransmission(false);
+    uint8_t rCountE = Wire1.requestFrom((uint8_t)_activeAddr, (uint8_t)6);
+    uint8_t eulerRaw[6] = {0};
+    for (int i = 0; i < rCountE && i < 6; i++) eulerRaw[i] = Wire1.read();
+    out.printf("  Raw Euler I2C:   wErr=%u, rCount=%u [%02X %02X %02X %02X %02X %02X]\n",
+               wErrE, rCountE, eulerRaw[0], eulerRaw[1], eulerRaw[2], eulerRaw[3], eulerRaw[4], eulerRaw[5]);
+
+    // Direct read Accel registers (0x08 - 0x0D)
+    Wire1.beginTransmission(_activeAddr);
+    Wire1.write(0x08);
+    uint8_t wErrA = Wire1.endTransmission(false);
+    uint8_t rCountA = Wire1.requestFrom((uint8_t)_activeAddr, (uint8_t)6);
+    uint8_t accRaw[6] = {0};
+    for (int i = 0; i < rCountA && i < 6; i++) accRaw[i] = Wire1.read();
+    out.printf("  Raw Accel I2C:   wErr=%u, rCount=%u [%02X %02X %02X %02X %02X %02X]\n",
+               wErrA, rCountA, accRaw[0], accRaw[1], accRaw[2], accRaw[3], accRaw[4], accRaw[5]);
 
     // Vector readout
     imu::Vector<3> euler = _bno.getVector(Adafruit_BNO055::VECTOR_EULER);
@@ -413,6 +472,11 @@ void IMUSensorManager::runDiagnostics(Print& out) {
 
 void IMUSensorManager::readLiveData(IMUDiagnosticResults& res) {
     if (!_initialized) return;
+
+    if (_bno.getMode() != OPERATION_MODE_NDOF) {
+        _bno.setMode(OPERATION_MODE_NDOF);
+        delay(40);
+    }
 
     _bno.getCalibration(&res.calSys, &res.calGyro, &res.calAccel, &res.calMag);
 
@@ -532,9 +596,9 @@ void IMUSensorManager::runEdgeCaseDiagnostics(Print& out) {
     Wire.begin(PIN_I2C1_SDA, PIN_I2C1_SCL, 100000);
     Wire.setTimeOut(50);
 
-    // Restore Wire1 to IMU Bus 2 (Pins 2, 1)
-    Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 100000);
-    Wire1.setTimeOut(50);
+    // Restore Wire1 to IMU Bus 2 (Pins 2, 1) at 50 kHz
+    Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 50000);
+    Wire1.setTimeOut(100);
     out.println("   - Default I2C bus controllers restored.");
 
     out.println("==================================================");
