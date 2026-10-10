@@ -16,15 +16,6 @@ static EnvDiagnosticResults s_diagResults;
 static uint16_t s_ms5607C[8] = {0};
 static uint8_t s_ms5607Addr = 0;
 static uint8_t s_bme680Addr = 0;
-static uint32_t s_lastScdSampleMs = 0;
-static uint8_t s_sensorFailures[6] = {0};
-static uint32_t s_nextSensorRecoveryMs[6] = {0};
-enum SensorIndex : uint8_t { MS5607, BME680, SCD40, SGP41, LTR390, TSL2591 };
-
-static bool sensorAcknowledges(uint8_t address) {
-    Wire.beginTransmission(address);
-    return Wire.endTransmission() == 0;
-}
 
 // Standard TE Connectivity MS5607 CRC4 calculation
 uint8_t EnvSensorsManager::calcMs5607Crc4(uint16_t n_prom[]) {
@@ -164,7 +155,7 @@ bool EnvSensorsManager::initBME680(uint8_t addr) {
     return false;
 }
 
-bool EnvSensorsManager::initSCD40(bool selfTest) {
+bool EnvSensorsManager::initSCD40() {
     scd4x.begin(Wire);
     scd4x.stopPeriodicMeasurement();
     
@@ -174,21 +165,17 @@ bool EnvSensorsManager::initSCD40(bool selfTest) {
         s_diagResults.scd40Detected = true;
         s_diagResults.scd40Serial = ((uint64_t)serial0 << 32) | ((uint64_t)serial1 << 16) | serial2;
 
-        if (selfTest) {
-            uint16_t selfTestResult = 0;
-            err = scd4x.performSelfTest(selfTestResult);
-            s_diagResults.scd40SelfTestPassed = (err == 0 && selfTestResult == 0);
-        }
+        uint16_t selfTestResult = 0;
+        err = scd4x.performSelfTest(selfTestResult);
+        s_diagResults.scd40SelfTestPassed = (err == 0 && selfTestResult == 0);
 
-        if (scd4x.startPeriodicMeasurement() == 0) {
-            s_lastScdSampleMs = millis();
-            return true;
-        }
+        scd4x.startPeriodicMeasurement();
+        return true;
     }
     return false;
 }
 
-bool EnvSensorsManager::initSGP41(bool selfTest) {
+bool EnvSensorsManager::initSGP41() {
     sgp41.begin(Wire);
     
     uint16_t serial[3] = {0};
@@ -197,11 +184,9 @@ bool EnvSensorsManager::initSGP41(bool selfTest) {
         s_diagResults.sgp41Detected = true;
         s_diagResults.sgp41Serial = ((uint64_t)serial[0] << 32) | ((uint64_t)serial[1] << 16) | serial[2];
 
-        if (selfTest) {
-            uint16_t testResult = 0;
-            err = sgp41.executeSelfTest(testResult);
-            s_diagResults.sgp41SelfTestPassed = (err == 0 && testResult == 0);
-        }
+        uint16_t testResult = 0;
+        err = sgp41.executeSelfTest(testResult);
+        s_diagResults.sgp41SelfTestPassed = (err == 0 && testResult == 0);
         return true;
     }
     return false;
@@ -358,101 +343,50 @@ void EnvSensorsManager::runAllDiagnostics(Print& out) {
 }
 
 void EnvSensorsManager::readAllSensors(EnvDiagnosticResults& res) {
-    if (s_diagResults.ms5607Detected && sensorAcknowledges(s_ms5607Addr)) {
-        calculateMs5607(s_ms5607Addr, s_ms5607C, res.ms5607PressureHpa,
-                        res.ms5607TemperatureC, res.ms5607AltitudeM);
-        res.ms5607Detected = res.ms5607PressureHpa > 0.0f && isfinite(res.ms5607PressureHpa);
+    if (s_diagResults.ms5607Detected) {
+        calculateMs5607(s_ms5607Addr, s_ms5607C, res.ms5607PressureHpa, res.ms5607TemperatureC, res.ms5607AltitudeM);
     }
-    if (s_diagResults.bme680Detected && sensorAcknowledges(s_bme680Addr) && bme.performReading()) {
+    if (s_diagResults.bme680Detected && bme.performReading()) {
         res.bme680TemperatureC = bme.temperature;
         res.bme680PressureHpa = bme.pressure / 100.0f;
         res.bme680HumidityPct = bme.humidity;
         res.bme680GasResistanceKOhms = bme.gas_resistance / 1000.0f;
-        res.bme680Detected = res.bme680PressureHpa > 0.0f && isfinite(res.bme680PressureHpa);
     }
     static uint16_t s_lastCo2 = 400;
     static float s_lastScdTemp = 25.0f;
     static float s_lastScdHum = 50.0f;
 
-    if (s_diagResults.scd40Detected && sensorAcknowledges(0x62)) {
+    if (s_diagResults.scd40Detected) {
         bool dataReady = false;
-        const uint16_t readyError = scd4x.getDataReadyFlag(dataReady);
-        bool readOk = readyError == 0;
-        if (readOk && dataReady) {
+        scd4x.getDataReadyFlag(dataReady);
+        if (dataReady) {
             uint16_t co2 = 0;
             float temp = 0.0f, hum = 0.0f;
             if (scd4x.readMeasurement(co2, temp, hum) == 0 && co2 > 0) {
                 s_lastCo2 = co2;
                 s_lastScdTemp = temp;
                 s_lastScdHum = hum;
-                s_lastScdSampleMs = millis();
-            } else {
-                readOk = false;
             }
         }
-        res.scd40Detected = readOk && (uint32_t)(millis() - s_lastScdSampleMs) < 15000;
-        if (res.scd40Detected) {
-            res.scd40Co2Ppm = s_lastCo2;
-            res.scd40TemperatureC = s_lastScdTemp;
-            res.scd40HumidityPct = s_lastScdHum;
-        }
+        res.scd40Co2Ppm = s_lastCo2;
+        res.scd40TemperatureC = s_lastScdTemp;
+        res.scd40HumidityPct = s_lastScdHum;
     }
 
     float compTemp = (s_lastScdTemp > 0.0f) ? s_lastScdTemp : res.ms5607TemperatureC;
     float compHum = (s_lastScdHum > 0.0f) ? s_lastScdHum : 50.0f;
 
-    if (s_diagResults.sgp41Detected && sensorAcknowledges(0x59)) {
-        res.sgp41Detected = sgp41.measureRawSignals(compTemp, compHum,
-                                                    res.sgp41RawVoc, res.sgp41RawNox) == 0;
+    if (s_diagResults.sgp41Detected) {
+        sgp41.measureRawSignals(compTemp, compHum, res.sgp41RawVoc, res.sgp41RawNox);
     }
-    if (s_diagResults.ltr390Detected && sensorAcknowledges(0x53)) {
+    if (s_diagResults.ltr390Detected) {
         res.ltr390RawAls = ltr.readALS();
         res.ltr390Lux = 0.6f * (float)res.ltr390RawAls / 3.0f;
-        res.ltr390Detected = true; // Zero is a valid reading in darkness.
     }
-    if (s_diagResults.tsl2591Detected && sensorAcknowledges(0x29)) {
+    if (s_diagResults.tsl2591Detected) {
         uint32_t lum = tsl.getFullLuminosity();
         res.tsl2591Ch1Ir = lum >> 16;
         res.tsl2591Ch0Full = lum & 0xFFFF;
         res.tsl2591Lux = tsl.calculateLux(res.tsl2591Ch0Full, res.tsl2591Ch1Ir);
-        res.tsl2591Detected = true; // Zero is a valid reading in darkness.
     }
-
-    const bool expected[6] = {s_diagResults.ms5607Detected, s_diagResults.bme680Detected,
-                              s_diagResults.scd40Detected, s_diagResults.sgp41Detected,
-                              s_diagResults.ltr390Detected, s_diagResults.tsl2591Detected};
-    const bool healthy[6] = {res.ms5607Detected, res.bme680Detected, res.scd40Detected,
-                             res.sgp41Detected, res.ltr390Detected, res.tsl2591Detected};
-    const uint32_t now = millis();
-    uint8_t recoveryMask = 0;
-    for (uint8_t i = 0; i < 6; ++i) {
-        if (!expected[i] || healthy[i]) {
-            s_sensorFailures[i] = 0;
-            continue;
-        }
-        if (s_sensorFailures[i] < 3) ++s_sensorFailures[i];
-        if (s_sensorFailures[i] >= 3 && (int32_t)(now - s_nextSensorRecoveryMs[i]) >= 0) {
-            recoveryMask |= 1u << i;
-            s_nextSensorRecoveryMs[i] = now + 30000;
-        }
-    }
-    if (!recoveryMask) return;
-
-    Serial.printf("# I2C Bus 1 sensor read failures (mask 0x%02X); restarting bus\n", recoveryMask);
-    I2CBusManager::restartBus(1);
-    if (recoveryMask & (1u << MS5607)) initMS5607(s_ms5607Addr);
-    if (recoveryMask & (1u << BME680)) initBME680(s_bme680Addr);
-    if (recoveryMask & (1u << SCD40)) initSCD40(false);
-    if (recoveryMask & (1u << SGP41)) initSGP41(false);
-    if (recoveryMask & (1u << LTR390)) {
-        // begin() allocates register objects, so reconfigure this instance in
-        // place during repeated recovery attempts.
-        if (ltr.reset()) {
-            ltr.enable(true);
-            ltr.setMode(LTR390_MODE_ALS);
-            ltr.setGain(LTR390_GAIN_3);
-            ltr.setResolution(LTR390_RESOLUTION_18BIT);
-        }
-    }
-    if (recoveryMask & (1u << TSL2591)) initTSL2591();
 }

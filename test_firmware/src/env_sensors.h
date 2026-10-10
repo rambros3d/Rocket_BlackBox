@@ -65,8 +65,8 @@ public:
 private:
     static bool initMS5607(uint8_t addr);
     static bool initBME680(uint8_t addr);
-    static bool initSCD40(bool selfTest = true);
-    static bool initSGP41(bool selfTest = true);
+    static bool initSCD40();
+    static bool initSGP41();
     static bool initLTR390();
     static bool initTSL2591();
 

@@ -8,12 +8,9 @@
 #include "gps_diagnostics.h"
 #include "flash_storage_mgr.h"
 #include "lora_diagnostic.h"
-#include "telemetry_collector.h"
 
 static bool s_streamingMode = false;
 static uint32_t s_lastStreamMs = 0;
-static bool s_jsonStreamMode = false;
-static uint32_t s_lastJsonMs = 0;
 
 void printMenu() {
     Serial.println();
@@ -23,7 +20,6 @@ void printMenu() {
     Serial.println("Select a diagnostic command:");
     Serial.println("  [1] Run Full Subsystem POST (Power-On Self-Test)");
     Serial.println("  [2] Toggle Live Sensor Telemetry Stream (1 Hz)");
-    Serial.println("  [j] Toggle Dashboard JSON Telemetry Stream (1 Hz)");
     Serial.println("  [3] Run SDMMC Storage Benchmark (1 MB R/W)");
     Serial.println("  [4] Re-scan Dual I2C Buses");
     Serial.println("  [5] Query GPS & 1PPS Timing Status");
@@ -32,12 +28,14 @@ void printMenu() {
     Serial.println("  [6] Query Power & Battery Health");
     Serial.println("  [7] Probe BNO055 Electrical Lines & Ping");
     Serial.println("  [e] Run BNO055 Edge-Case Recovery Suite");
+    Serial.println("  [i] Re-initialize BNO055 & Enter NDOF Fusion");
     Serial.println("  [8] Query 12MB Flash & USB MSC Storage");
     Serial.println("  [9] List Flash Files (/ffat)");
     Serial.println("  [d] Dump Latest Flight Log CSV");
     Serial.println("  [0] Toggle Flash CSV Flight Logging");
     Serial.println("  [r] Remount / Refresh USB MSC Drive");
     Serial.println("  [f] Format 12MB Flash Storage Partition");
+    Serial.println("  [l] Open LoRa RF Transceiver Diagnostic Menu");
     Serial.println("  [h] Show this menu");
     Serial.println("--------------------------------------------------");
     Serial.print("> ");
@@ -56,6 +54,7 @@ void runFullPost() {
     SDDiagnosticsManager::runDiagnostics(Serial);
     GPSDiagnosticsManager::runDiagnostics(Serial);
     FlashStorageManager::printDiagnostics(Serial);
+    LoRaDiagnostic::runHardwareCheck();
 
     Serial.println("##################################################");
     Serial.println("               END OF POST REPORT                 ");
@@ -76,8 +75,7 @@ void streamTelemetry() {
     uint8_t batPct = PowerManager::getBatteryPercentage();
 
     Serial.printf("[T+%06lu s] Bat: %.2fV (%u%%) | P_Alt: %.1fm | Pres: %.2fhPa\n",
-                  (unsigned long)TelemetryCollector::uptimeSeconds(), vBat, batPct,
-                  env.ms5607AltitudeM, env.ms5607PressureHpa);
+                  millis() / 1000, vBat, batPct, env.ms5607AltitudeM, env.ms5607PressureHpa);
     Serial.printf("  IMU : Head=%.1f°, Roll=%.1f°, Pitch=%.1f° | Acc=[%.2f, %.2f, %.2f] m/s² | Cal:[S:%u G:%u A:%u M:%u]\n",
                   imu.headingDeg, imu.rollDeg, imu.pitchDeg,
                   imu.linearAccel.x(), imu.linearAccel.y(), imu.linearAccel.z(),
@@ -128,6 +126,9 @@ void setup() {
     // 10. Initialize BE-166 GPS UART and 1PPS interrupt
     GPSDiagnosticsManager::initGPS(Serial);
 
+    // 11. Initialize SX1262 LoRa Transceiver
+    LoRaDiagnostic::init();
+
     Serial.println("\nAll subsystems initialized.");
     printMenu();
 }
@@ -155,13 +156,6 @@ void loop() {
                 Serial.printf("\n>>> Live Telemetry Stream %s <<<\n\n",
                               s_streamingMode ? "STARTED" : "STOPPED");
                 if (!s_streamingMode) printMenu();
-                break;
-            case 'j':
-            case 'J':
-                s_jsonStreamMode = !s_jsonStreamMode;
-                Serial.printf("\n# >>> Dashboard JSON Stream %s <<<\n\n",
-                              s_jsonStreamMode ? "STARTED" : "STOPPED");
-                if (!s_jsonStreamMode) printMenu();
                 break;
             case '3':
                 Serial.println();
@@ -205,6 +199,12 @@ void loop() {
                 IMUSensorManager::runEdgeCaseDiagnostics(Serial);
                 printMenu();
                 break;
+            case 'i':
+            case 'I':
+                Serial.println();
+                IMUSensorManager::initIMU(Serial);
+                printMenu();
+                break;
             case '8':
                 Serial.println();
                 FlashStorageManager::printDiagnostics(Serial);
@@ -246,6 +246,12 @@ void loop() {
                 FlashStorageManager::formatStorage(Serial);
                 printMenu();
                 break;
+            case 'l':
+            case 'L':
+                Serial.println();
+                LoRaDiagnostic::showMenu();
+                printMenu();
+                break;
             case 'h':
             case '?':
                 printMenu();
@@ -284,14 +290,5 @@ void loop() {
             streamTelemetry();
         }
     }
-
-    if (s_jsonStreamMode) {
-        uint32_t now = millis();
-        if (now - s_lastJsonMs >= 1000) {
-            s_lastJsonMs = now;
-            TelemetryFrame frame;
-            TelemetryCollector::collect(frame);
-            Telemetry::writeJson(Serial, frame);
-        }
-    }
 }
+

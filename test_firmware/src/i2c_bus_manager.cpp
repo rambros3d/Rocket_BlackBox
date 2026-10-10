@@ -10,36 +10,6 @@ void I2CBusManager::initBuses() {
     Wire1.setTimeOut(100);
 }
 
-void I2CBusManager::restartBus(uint8_t busIndex) {
-    TwoWire& bus = busIndex == 2 ? Wire1 : Wire;
-    gpio_num_t sda = busIndex == 2 ? PIN_I2C2_SDA : PIN_I2C1_SDA;
-    gpio_num_t scl = busIndex == 2 ? PIN_I2C2_SCL : PIN_I2C1_SCL;
-    bus.end();
-
-    // Release SDA while clocking a slave that may have stopped mid-byte.
-    pinMode(sda, INPUT_PULLUP);
-    pinMode(scl, INPUT_PULLUP);
-    delayMicroseconds(10);
-    if (digitalRead(sda) == LOW) {
-        for (uint8_t i = 0; i < 9 && digitalRead(sda) == LOW; ++i) {
-            pinMode(scl, OUTPUT);
-            digitalWrite(scl, LOW);
-            delayMicroseconds(10);
-            pinMode(scl, INPUT_PULLUP);
-            delayMicroseconds(10);
-        }
-        pinMode(sda, OUTPUT);
-        digitalWrite(sda, LOW);
-        delayMicroseconds(10);
-        pinMode(scl, INPUT_PULLUP);
-        delayMicroseconds(10);
-        pinMode(sda, INPUT_PULLUP);
-    }
-
-    bus.begin(sda, scl, 100000);
-    bus.setTimeOut(50);
-}
-
 bool I2CBusManager::isDevicePresent(TwoWire& bus, uint8_t address) {
     bus.beginTransmission(address);
     return (bus.endTransmission() == 0);

@@ -31,7 +31,6 @@ struct IMUDiagnosticResults {
     float rollDeg;
     float pitchDeg;
     imu::Quaternion quat;
-    imu::Vector<3> accel;
     imu::Vector<3> linearAccel;
     imu::Vector<3> gyroDps;
     int8_t tempC;
@@ -43,16 +42,12 @@ public:
     static void runDiagnostics(Print& out);
     static void probeIMULines(Print& out);
     static void runEdgeCaseDiagnostics(Print& out);
-    // Returns false when the latest sensor sample is unavailable.
-    static bool readLiveData(IMUDiagnosticResults& res);
+    static void readLiveData(IMUDiagnosticResults& res);
     static void printTelemetryRow(Print& out);
-    static bool isInitialized() { return _initialized; }
-    static uint8_t activeBus() { return _activeBus; }
 
 private:
     static Adafruit_BNO055 _bno;
     static IMUDiagnosticResults _diagResults;
     static bool _initialized;
     static uint8_t _activeAddr;
-    static uint8_t _activeBus;
 };
