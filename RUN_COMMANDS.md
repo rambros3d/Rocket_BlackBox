@@ -80,7 +80,7 @@ both open the same serial port.
 In terminal 2, while the payload is running its application:
 
 ```bash
-cd /Volumes/Raj/Projects/Rocket_BlackBox/firmware
+cd /Volumes/Raj/Projects/Rocket_BlackBox/flight_firmware
 ~/.platformio/penv/bin/pio device monitor \
   --port /dev/cu.usbmodemA4CB8FC7E48C2 --baud 115200
 ```
@@ -102,7 +102,7 @@ starting `# BNO055` or `# I2C Bus 1` when recovery runs. This behavior takes
 effect only after uploading the new payload image.
 
 ```bash
-cd /Volumes/Raj/Projects/Rocket_BlackBox/firmware
+cd /Volumes/Raj/Projects/Rocket_BlackBox/flight_firmware
 ~/.platformio/penv/bin/pio run -e rocket_payload_telemetry
 ```
 
@@ -117,9 +117,9 @@ appears, then run:
 
 After the upload succeeds, tap **RESET/EN with BOOT released** to start the
 application. The flight image is stored in flash and normally starts again on
-power-up; it does not need reflashing each time. The diagnostic image is a
-different build (`-e rocket_payload_diagnostic`) and does not transmit the
-flight LoRa packets.
+power-up; it does not need reflashing each time. The diagnostic image is
+maintained separately in `test_firmware/` and does not transmit the flight
+LoRa packets.
 
 ## Why does this board currently need a manual RESET after power cycling?
 
@@ -151,6 +151,6 @@ line during cold power-on, plus GPIO0 level and the USB boot log, would identify
 the actual fault before changing PCB components.
 
 Sources: [local payload schematic](pcb/Payload_Schematic.pdf),
-[`power_mgr.cpp`](firmware/src/power_mgr.cpp),
+[`power_mgr.cpp`](flight_firmware/src/power_mgr.cpp),
 [Espressif ESP32-S3 power-up/reset guidance](https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/schematic-checklist.html),
 [Espressif ESP32-S3 boot-mode guidance](https://docs.espressif.com/projects/esptool/en/latest/esp32s3/advanced-topics/boot-mode-selection.html).

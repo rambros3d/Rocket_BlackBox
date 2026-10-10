@@ -1,6 +1,6 @@
 import type { Frame, SourceName } from './types'
 
-// Binary protocol shared with firmware/src/telemetry_packet.{h,cpp}
+// Binary protocol shared with flight_firmware/src/telemetry_packet.{h,cpp}
 export const MAGIC_R = 0x52 // 'R'
 export const MAGIC_B = 0x42 // 'B' telemetry frame
 export const MAGIC_A = 0x41 // 'A' command acknowledgement

@@ -54,7 +54,7 @@ npm run dev      # http://localhost:5173 — open in Chrome or Edge (Web Serial)
 npm run build    # static build in dashboard/dist
 ```
 
-Flash the payload with the v2 telemetry firmware (`pio run -e rocket_payload_telemetry -t upload`, see [firmware/README.md](firmware/README.md)).
+Flash the payload with the v2 telemetry firmware (`pio run -e rocket_payload_telemetry -t upload`, see [flight_firmware/README.md](flight_firmware/README.md)). The existing [test_firmware/](test_firmware/) project remains the diagnostic image.
 
 ---
 
@@ -63,5 +63,5 @@ Flash the payload with the v2 telemetry firmware (`pio run -e rocket_payload_tel
 - 🌐 [Live Documentation Site](https://rambros3d.github.io/Rocket_BlackBox/)
 - 📊 [Ground Station Dashboard](dashboard/)
 - 📄 [Electrical Schematic PDF](pcb/Payload_Schematic.pdf)
-- 📌 [Hardware Pinout Reference](firmware/pinout.md)
+- 📌 [Hardware Pinout Reference](flight_firmware/pinout.md)
 - 📐 [3D Mechanical Models](mechanical/)

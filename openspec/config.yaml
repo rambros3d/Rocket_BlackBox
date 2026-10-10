@@ -7,13 +7,16 @@ context: |
   MCU: RAK3112 (Espressif ESP32-S3 + Semtech SX1262 LoRa, 16MB Flash, 8MB PSRAM)
 
   Subsystems & Directory Organization:
-    - firmware/: Embedded PlatformIO project using the Arduino-ESP32 framework.
-      - Source Code: firmware/src/
-      - Headers: firmware/include/
-      - Build Config: firmware/platformio.ini
-      - Partitions: firmware/partitions_12MB_ffat.csv (12MB FFat partition for flight data)
-      - Diagnostic Reports: firmware/HARDWARE_DIAGNOSTICS.md, firmware/pinout.md, firmware/README.md
-      - Note: All firmware build, flash, and test tasks must run with working directory in firmware/.
+    - test_firmware/: Existing diagnostic PlatformIO project using the Arduino-ESP32 framework.
+      - Source Code: test_firmware/src/
+      - Build Config: test_firmware/platformio.ini
+      - Diagnostic Reports: test_firmware/HARDWARE_DIAGNOSTICS.md, test_firmware/pinout.md, test_firmware/README.md
+    - flight_firmware/: Flight telemetry PlatformIO project for the RAK3112 payload.
+      - Source Code: flight_firmware/src/
+      - Headers: flight_firmware/include/
+      - Build Config: flight_firmware/platformio.ini
+      - Partitions: flight_firmware/partitions_12MB_ffat.csv (12MB FFat partition for flight data)
+      - Note: Flight build, flash, and telemetry tasks must run with working directory in flight_firmware/.
     - pcb/: Hardware schematics, layout documentation, and board photos/renders.
       - Schematic: pcb/Payload_Schematic.pdf
       - Visuals: pcb/.images/
@@ -28,6 +31,6 @@ context: |
 rules:
   proposal:
     - Explicitly state which subsystem (firmware, pcb, mechanical, website) is affected.
-    - Always reference full paths relative to repository root (e.g. firmware/src/... instead of src/...).
+    - Always reference full paths relative to repository root (e.g. flight_firmware/src/... instead of src/...).
   tasks:
-    - Explicitly specify the working directory for execution steps (e.g. "Run PlatformIO build in firmware/").
+    - Explicitly specify the working directory for execution steps (e.g. "Run PlatformIO build in flight_firmware/").

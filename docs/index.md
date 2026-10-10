@@ -4,7 +4,8 @@ Built around the **RAK3112** module (Espressif ESP32-S3 + Semtech SX1262 LoRa), 
 
 ### Source files: [rambros3d/Rocket_BlackBox](https://github.com/rambros3d/Rocket_BlackBox)
 
-- Firmware: [`arduino`](https://github.com/rambros3d/Rocket_BlackBox/tree/main/test_firmware)
+- Diagnostic firmware: [`test_firmware`](https://github.com/rambros3d/Rocket_BlackBox/tree/main/test_firmware)
+- Flight telemetry firmware: [`flight_firmware`](https://github.com/rambros3d/Rocket_BlackBox/tree/main/flight_firmware)
 - 3D Model: [`fusion360`](https://a360.co/47nZXGg)
 - PCB: [`oshwlab`](https://oshwlab.com/shreeramlive/project_dmtpicmk)
 
