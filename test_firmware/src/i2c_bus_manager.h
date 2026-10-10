@@ -14,6 +14,8 @@ struct I2CDeviceInfo {
 class I2CBusManager {
 public:
     static void initBuses();
+    // Recreate one I2C controller after repeated read failures.
+    static void restartBus(uint8_t busIndex);
     
     // Scans the specified bus (Wire or Wire1) and returns found addresses
     static std::vector<uint8_t> scanBus(TwoWire& bus, const char* busName, Print& out);

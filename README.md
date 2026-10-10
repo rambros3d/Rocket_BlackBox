@@ -41,9 +41,27 @@ This project's PCB design, fabrication, and PCBA assembly were generously sponso
 
 ---
 
+## Ground Station Dashboard
+
+[`dashboard/`](dashboard/) is a React + Vite + Tailwind CSS web app (Antariksha India branding) that runs on the ground PC with a **Waveshare USB-TO-LoRa-HF** receiver plugged in. It talks to the dongle over Web Serial, configures it with AT commands, decodes the payload's LoRa frames and sends uplink commands (ping, start/stop flash logging). It can also connect directly to the payload over USB for bench testing, or run on simulated data.
+
+Pages: Dashboard (snapshot and overview layouts), Live Data, Map View with path playback, Charts, Alerts, Devices (link setup + serial console), Export (CSV / JSON / GPX / KML) and Settings.
+
+```bash
+cd dashboard
+npm install
+npm run dev      # http://localhost:5173 — open in Chrome or Edge (Web Serial)
+npm run build    # static build in dashboard/dist
+```
+
+Flash the payload with the v2 telemetry firmware (`pio run -e rocket_payload_telemetry -t upload`, see [firmware/README.md](firmware/README.md)).
+
+---
+
 ## Detailed Resources
 
 - 🌐 [Live Documentation Site](https://rambros3d.github.io/Rocket_BlackBox/)
+- 📊 [Ground Station Dashboard](dashboard/)
 - 📄 [Electrical Schematic PDF](pcb/Payload_Schematic.pdf)
 - 📌 [Hardware Pinout Reference](firmware/pinout.md)
 - 📐 [3D Mechanical Models](mechanical/)
