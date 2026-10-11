@@ -166,7 +166,7 @@ During hardware bring-up and bench testing of the Rev 1.0 PCB, the onboard Bosch
 - **Bosch BME680 (Auxiliary Environmental Sensor):** This one suffered a hard physical short between the SDA1 line and GND, requiring physical isolation via removal of its 0Ω series resistor.
 
 ### External IMU Workaround
-- To bypass the onboard IC issues and restore full 9-DOF inertial and attitude sensing for flight, an **external BNO055 module** was connected to the system as a hardware workaround.
+- To bypass the onboard IC issues and restore full 9-DOF inertial and attitude sensing for flight, an **external 7semi BNO055 module** is connected to dedicated I2C Bus 2 (`GPIO 2`, `GPIO 1`). Bus 2 is clocked strictly at **50 kHz** with a 100 ms timeout to reliably accommodate the BNO055 internal Cortex-M0 clock stretching during NDOF fusion cycles.
 - Environmental data acquisition is handled by the primary MS5607 altimeter, Sensirion SCD40, and SGP41 sensors.
 
 ---
