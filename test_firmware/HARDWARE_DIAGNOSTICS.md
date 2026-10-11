@@ -1,10 +1,10 @@
 # Rocket BlackBox Hardware Diagnostics Report
 
-**Date:** 2026-09-28 (Updated with Bench Verification)  
+**Date:** 2026-10-11 (Updated with Full Bench & LoRa Verification)  
 **Board:** Rocket BlackBox Payload PCB (Rev 1.0)  
 **MCU:** RAK3112 (ESP32-S3 + SX1262 LoRa, 80 MHz, 16MB Flash, 8MB PSRAM)  
-**Firmware:** PlatformIO Arduino Framework (`firmware`)  
-**Status:** Environmental Bus Operational — BME680 Identified as SDA Short Culprit
+**Firmware:** PlatformIO Arduino Framework (`test_firmware`)  
+**Status:** Environmental Bus, External BNO055 IMU (50 kHz), 3D GNSS Lock, and LoRa Downlink 100% Operational
 
 ---
 
@@ -12,12 +12,13 @@
 
 | Subsystem | Bus / Pins | Measured Status | Issue & Root Cause | Next Hardware Action |
 | :--- | :--- | :--- | :--- | :--- |
-| **MCU & Core** | USB CDC `/dev/ttyACM0` | **PASS (100% Healthy)** | None (8.7 MB PSRAM, ADC 5.01V, Latch active) | Ready for flight logic |
-| **Environmental** | I2C Bus 1 (`SDA: 10`, `SCL: 11`) | **PASS (Operational)** | **Short RESOLVED**: U5 (BME680) isolated via R26. MS5607 (`0x77`), SCD40 (`0x62`), SGP41 (`0x59`), and TSL25911FN (`0x29`) fully verified live. Atmospheric temp remapped to MS5607 (0.01°C); cabin temp & RH to SCD40. LTR-390 unpopulated. | Flight altimetry, ambient light & air quality 100% ready. |
-| **IMU (BNO055)** | I2C Bus 2 (`SDA: 2`, `SCL: 1`) | **FAIL (No ACK / NACK)** | **`nRESET` (Pin 11) is unconnected/floating**. Systematic across Rev 1.0 boards. | Rev 1.0 rework: precision bodge wire Pin 11 to 3.3V.<br>Rev 2.0: Route Pin 11 to 3.3V via 10kΩ pull-up. |
-| **GPS (BE-166)** | UART (`RX: 42`, `TX: 41`, `1PPS: 38`) | **PASS (100% Operational)** | **Crossover resolved & Bidirectional verified**: MCU RX=GPIO 42, TX=GPIO 41. Multi-constellation NMEA streaming at 115200 baud. UBX core confirmed via `$PUBX,04` response. | Sat lock pending outdoor/antenna test; flight ready |
+| **MCU & Core** | USB CDC `/dev/ttyACM1` | **PASS (100% Healthy)** | None (8.6 MB PSRAM, ADC 4.78V, Latch active) | Ready for flight logic |
+| **Environmental** | I2C Bus 1 (`SDA: 10`, `SCL: 11`) | **PASS (Operational)** | **Short RESOLVED**: U5 (BME680) isolated via R26. MS5607 (`0x77`), SCD40 (`0x62`), SGP41 (`0x59`), TSL25911FN (`0x29`), and LTR-390UV (`0x53`) fully verified live. Atmospheric temp remapped to MS5607 (0.01°C); cabin temp & RH to SCD40. | Flight altimetry, ambient light & air quality 100% ready. |
+| **IMU (BNO055)** | I2C Bus 2 (`SDA: 2`, `SCL: 1` @ 50 kHz) | **PASS (Operational)** | **Onboard IC (Rev 1.0)**: Pin 11 (`nRESET`) floating.<br>**Workaround (PASS)**: External 7semi BNO055 module connected to Bus 2 @ 50 kHz (`0x28`). Verified in NDOF fusion mode (Gyro cal 3/3). | Rev 2.0: Route Pin 11 to 3.3V via 10kΩ pull-up. |
+| **GPS (BE-166)** | UART (`RX: 42`, `TX: 41`, `1PPS: 38`) | **PASS (100% Operational)** | **Crossover resolved & Bidirectional verified**: Multi-constellation NMEA streaming at 115200 baud. **3D Fix locked (8 Satellites, HDOP 1.9, 1PPS locked at 1.00 Hz)**. | Flight ready. |
 | **Flash & USB MSC** | 16MB SPI Flash (12MB `/ffat` partition) | **PASS (100% Operational)** | Fully formatted with Wear-Leveling FAT. Mounts as native USB Mass Storage drive (`/dev/sdb`) on host. Background 1Hz flight CSV logging active. | Flight logging ready |
 | **MicroSD Card** | 4-bit SDMMC (`CMD: 21`, `CLK: 14`, `D0-D3: 13,12,17,18`) | **Pending Card** | SDMMC driver functional; awaiting card insertion. | Insert MicroSD card for speed benchmark |
+| **LoRa RF Link** | SX1262 $\leftrightarrow$ Waveshare Dongle | **PASS (100% Operational)** | Transmitting at 868.0 MHz, SF7, BW 125 kHz, CR 4/5, Sync Word 0x12. **0% packet loss over the air**. Bench RSSI: -55 to -57 dBm, SNR: +12.5 to +12.8 dB. | Flight telemetry downlink verified. |
 
 
 ---
@@ -246,6 +247,40 @@ The payload integrates a dual-tier storage architecture designed for continuous 
    * **Interface:** Dedicated 4-bit parallel bus (`CLK: 14`, `CMD: 21`, `D0: 13`, `D1: 12`, `D2: 17`, `D3: 18`).
    * **Status:** Hardware driver initialized; ready for high-speed benchmark execution upon card insertion.
 
+---
 
+## 8. External 7semi BNO055 9-DOF IMU Integration (Bus 2 @ 50 kHz)
 
+To bypass the floating `nRESET` pin on the onboard BNO055 (Rev 1.0), an external **7semi BNO055 breakout module** is interfaced to dedicated I2C Bus 2 (`SDA: GPIO 2`, `SCL: GPIO 1`).
 
+### 8.1 Critical Timing: 50 kHz Bus Clock & Clock Stretching
+* **Root Cause for Initial NACKs:** The BNO055 internal ARM Cortex-M0 processor stretches `SCL` LOW during fusion computations. Standard 100 kHz/400 kHz bus clocking on the ESP32-S3 causes hardware peripheral timeouts.
+* **Working Configuration:** Running I2C Bus 2 (`Wire1`) strictly at **50 kHz** with a **100 ms timeout** (`Wire1.setTimeOut(100)`).
+* **Validation:**
+  * Software bit-bang ping & hardware scan: Acknowledged at address `0x28`.
+  * Silicon Read: Register `0x00` (`CHIP_ID`) returns `0xA0`. Subsystem IDs: Accel=`0xFB`, Mag=`0x32`, Gyro=`0x0F`.
+  * Operating Mode: Verified in `0x0C` (`OPERATION_MODE_NDOF`).
+  * Live Calibration: Internal Gyroscope cal automatically achieves `3/3` level (`Cal:[S:0 G:3 A:0 M:0]`).
+  * Real-time Euler and linear acceleration stream successfully at 1 Hz.
+
+---
+
+## 9. LoRa Over-the-Air RF Bench Link Verification
+
+Bi-directional RF communication between the RAK3112 onboard SX1262 transceiver and the Waveshare USB-to-LoRa-HF ground receiver was experimentally verified.
+
+### 9.1 RF Link Parameters
+* **Carrier Frequency:** 868.000 MHz
+* **Bandwidth:** 125.0 kHz
+* **Spreading Factor:** SF7
+* **Coding Rate:** 4/5
+* **Sync Word:** `0x12` (Private LoRa Network)
+* **Antenna Switch:** Driven via `GPIO 4` HIGH (TCXO ref: 1.6V on DIO3, DIO2 auto-switch).
+
+### 9.2 Measured Bench Performance
+* **Telemetry Beacon (Payload $\rightarrow$ Dongle):** 100% frame delivery with 0% packet loss over KISS interface (`BB_TELEM` frames).
+* **Downlink / Sniffer Mode (Dongle $\rightarrow$ Payload):**
+  * **Measured RSSI:** **-55.0 dBm to -57.0 dBm** (ideal bench signal level, unclipped).
+  * **Measured SNR:** **+12.5 dB to +12.8 dB** (clean link with high carrier-to-noise ratio).
+  * **Channel Noise Floor:** **-112 dBm to -114 dBm**.
+  * **Effective Link Margin:** ~68 dB on bench.

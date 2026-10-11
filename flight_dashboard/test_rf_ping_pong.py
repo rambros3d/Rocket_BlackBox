@@ -10,11 +10,13 @@ Concurrently runs:
    - Captures and displays real-time results from both ends!
 """
 
+import os
 import threading
 import time
 import struct
 import sys
 import serial
+import serial.tools.list_ports
 
 FEND = 0xC0
 FESC = 0xDB
@@ -89,14 +91,32 @@ class SlipDecoder:
 
 
 def run_test():
-    ground_port = "/dev/ttyACM0"
-    payload_port = "/dev/ttyACM1"
+    ground_port = None
+    payload_port = None
+
+    for p in serial.tools.list_ports.comports():
+        hwid = (p.hwid or "").upper()
+        desc = (p.description or "").upper()
+        if p.vid == 0x1A86 or "1A86:55D3" in hwid or "USB SINGLE SERIAL" in desc:
+            ground_port = p.device
+        elif p.vid == 0x303A or "303A:1001" in hwid or "ESP32" in desc:
+            payload_port = p.device
+
+    if not ground_port and os.path.exists("/dev/serial/by-id/usb-1a86_USB_Single_Serial_5B90162550-if00"):
+        ground_port = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5B90162550-if00"
+    if not payload_port and os.path.exists("/dev/serial/by-id/usb-Espressif_Systems_Espressif_ESP32-S3-DevKitC-1-N8__8_MB_QD__No_PSRAM__A4CB8FC7E488-if01"):
+        payload_port = "/dev/serial/by-id/usb-Espressif_Systems_Espressif_ESP32-S3-DevKitC-1-N8__8_MB_QD__No_PSRAM__A4CB8FC7E488-if01"
+
+    ground_port = ground_port or "/dev/ttyACM1"
+    payload_port = payload_port or "/dev/ttyACM0"
 
     print("Opening Ground Station modem on", ground_port)
     ser_ground = serial.Serial(ground_port, 115200, timeout=0.1)
 
     print("Opening Payload serial console on", payload_port)
     ser_payload = serial.Serial(payload_port, 115200, timeout=0.1)
+    ser_payload.dtr = 1
+    ser_payload.rts = 0
 
     # 1. Configure Ground Station Radio: 868.0 MHz, 125 kHz BW, SF7, CR 4/5
     # payload: freq (uint32), bw (uint32), sf (uint8), cr (uint8)
@@ -155,8 +175,9 @@ def run_test():
     gt.start()
 
     # Wait for payload to finish setup and display main menu
-    print("Waiting for payload to boot and display main menu...")
-    boot_deadline = time.time() + 15.0
+    print("Checking payload console...")
+    ser_payload.write(b"\r\nx\r\nh\r\n")
+    boot_deadline = time.time() + 5.0
     while time.time() < boot_deadline:
         if ser_payload.in_waiting:
             line = ser_payload.readline().decode("utf-8", "replace").strip()
