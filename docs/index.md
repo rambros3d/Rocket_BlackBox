@@ -4,8 +4,12 @@ Built around the **RAK3112** module (Espressif ESP32-S3 + Semtech SX1262 LoRa), 
 
 ### Source files: [rambros3d/Rocket_BlackBox](https://github.com/rambros3d/Rocket_BlackBox)
 
+> [!TIP]
+> **🚀 Live Ground Station Telemetry Dashboard**: Access live telemetry, 3D attitude, and maps at **[Launch Telemetry Dashboard](/dashboard/)** (supports Web Serial connections to the Waveshare LoRa receiver and USB payload).
+
 - Diagnostic firmware: [`test_firmware`](https://github.com/rambros3d/Rocket_BlackBox/tree/main/test_firmware)
 - Flight telemetry firmware: [`flight_firmware`](https://github.com/rambros3d/Rocket_BlackBox/tree/main/flight_firmware)
+- Telemetry Dashboard: [`/dashboard/`](/dashboard/)
 - 3D Model: [`fusion360`](https://a360.co/47nZXGg)
 - PCB: [`oshwlab`](https://oshwlab.com/shreeramlive/project_dmtpicmk)
 

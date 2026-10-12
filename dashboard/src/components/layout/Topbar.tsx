@@ -11,6 +11,14 @@ export default function Topbar({ showDate }: { showDate: boolean }) {
         Environmental Telemetry &amp; Monitoring System
       </h2>
       <div className="ml-auto flex items-center gap-2 text-sm text-slate-200">
+        <a
+          href="../"
+          target="_self"
+          className="mr-2 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
+          title="Return to Rocket BlackBox Documentation"
+        >
+          📖 Docs
+        </a>
         <ConnectionMenu />
         {showDate && (
           <span className="flex items-center gap-2 border-l border-white/10 pl-4">
