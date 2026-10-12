@@ -1,6 +1,6 @@
 import { DemoSource } from './demo'
 import { Command, COMMAND_LABEL, encodeCommand, JsonLineParser, LoRaStreamParser } from './protocol'
-import { encodeKiss, KissParser, KISS_DATA, KISS_HARDWARE, radioConfig } from './kiss'
+import { encodeKiss, KissParser, KISS_DATA, KISS_FULLDUPLEX, KISS_HARDWARE, KISS_PERSISTENCE, KISS_TXDELAY, radioConfig } from './kiss'
 import { FLAG, type LinkMode } from './types'
 import { useSettings, type DongleConfig } from '../store/settings'
 import { useTelemetry } from '../store/telemetry'
@@ -75,6 +75,8 @@ class LinkController {
   private autoConnectListenerAttached = false
   private lastAutoConnectError = 0
   private pingTimer: ReturnType<typeof setInterval> | null = null
+  private pingScheduledTimer: ReturnType<typeof setTimeout> | null = null
+  private lastPingSentAt = 0
   busy = false
 
   get isDemo() {
@@ -363,8 +365,12 @@ class LinkController {
 
   private startPingLoop() {
     this.stopPingLoop()
+    this.lastPingSentAt = 0
+    // Periodic fallback if no telemetry frames are arriving
     this.pingTimer = setInterval(() => {
-      void this.sendPingUplink()
+      if (Date.now() - this.lastPingSentAt >= 5000) {
+        void this.sendPingUplink()
+      }
     }, 5000)
   }
 
@@ -373,12 +379,33 @@ class LinkController {
       clearInterval(this.pingTimer)
       this.pingTimer = null
     }
+    if (this.pingScheduledTimer) {
+      clearTimeout(this.pingScheduledTimer)
+      this.pingScheduledTimer = null
+    }
+  }
+
+  private scheduleSynchronizedPing() {
+    if (this.mode !== 'lora' || !this.port || this.busy) return
+    const now = Date.now()
+    const latest = useTelemetry.getState().live.latest
+    // Poll more aggressively (every 2s) until first uplink ACK is verified, then every 4s
+    const minInterval = latest?.link.uplinkRssi !== null && latest?.link.uplinkRssi !== undefined ? 4000 : 2000
+    if (now - this.lastPingSentAt < minInterval) return
+    if (this.pingScheduledTimer) return
+
+    // Settle delay: give the payload SX1262 transceiver 80ms to finish TX and settle into RX mode
+    this.pingScheduledTimer = setTimeout(() => {
+      this.pingScheduledTimer = null
+      void this.sendPingUplink()
+    }, 80)
   }
 
   private async sendPingUplink() {
     if (this.mode !== 'lora' || !this.port || this.busy) return
     const currentCmd = useTelemetry.getState().command
     if (currentCmd?.status === 'pending') return
+    this.lastPingSentAt = Date.now()
     const packet = encodeCommand(Command.PING)
     try {
       await this.write(encodeKiss(KISS_DATA, packet))
@@ -422,9 +449,12 @@ class LinkController {
             void this.write(encodeKiss(KISS_HARDWARE, Uint8Array.of(0x0d)))
           }
           for (const ev of events) {
-            if (ev.kind === 'frame') t.ingest(ev.frame)
-            else if (ev.kind === 'text' && !hasBinaryFrame) t.log('rx', ev.text)
-            else if (ev.kind === 'ack') {
+            if (ev.kind === 'frame') {
+              t.ingest(ev.frame)
+              this.scheduleSynchronizedPing()
+            } else if (ev.kind === 'text' && !hasBinaryFrame) {
+              t.log('rx', ev.text)
+            } else if (ev.kind === 'ack') {
               t.noteAck(ev.cmd, ev.status)
               if (ev.rssi !== undefined && ev.snr !== undefined) {
                 t.applyUplinkMetrics(ev.rssi, ev.snr)
@@ -549,6 +579,13 @@ class LinkController {
       if (power[1] !== cfg.power) throw new Error('Receiver TX power readback differs')
       const signal = await this.hardwareRequest(Uint8Array.of(0x19, cfg.rssiOutput ? 1 : 0), (body) => body[0] === 0x99)
       if (signal[1] !== (cfg.rssiOutput ? 1 : 0)) throw new Error('Receiver signal report setting differs')
+
+      // Configure KISS CSMA parameters for deterministic command uplink:
+      // TxDelay = 0 (no pre-tx delay), Persistence = 255 (100% transmit probability), FullDuplex = 1 (bypass CAD backoff)
+      await this.write(encodeKiss(KISS_TXDELAY, Uint8Array.of(0)))
+      await this.write(encodeKiss(KISS_PERSISTENCE, Uint8Array.of(255)))
+      await this.write(encodeKiss(KISS_FULLDUPLEX, Uint8Array.of(1)))
+
       t.log('sys', 'KISS receiver configured and radio settings verified; listening for telemetry')
     } finally {
       this.busy = false

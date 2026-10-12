@@ -71,6 +71,10 @@ struct TelemetryFrame {
     float batteryV;
     uint8_t batteryPct;
     int8_t mcuTempC;
+
+    float uplinkRssi;
+    float uplinkSnr;
+    bool hasUplink;
 };
 
 // Compact little-endian LoRa payload (both ends are ESP32-S3).

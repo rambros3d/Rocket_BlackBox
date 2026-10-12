@@ -177,10 +177,10 @@ export default function DevicesPage() {
             <KV label="Packets received">{int(stats.packets)}</KV>
             <KV label="Sequence gaps">{int(stats.lost)}{stats.packets ? ` (${((stats.lost / (stats.packets + stats.lost)) * 100).toFixed(1)} %)` : ''}</KV>
             <KV label="Data rate">{stats.rateHz ? `${stats.rateHz.toFixed(2)} Hz` : '--'}</KV>
-            <KV label="Downlink RSSI (Ground)">{latest?.link.rssi !== null && latest?.link.rssi !== undefined ? `${latest.link.rssi} dBm` : '--'}</KV>
-            <KV label="Downlink SNR (Ground)">{latest?.link.snr !== null && latest?.link.snr !== undefined ? `${latest.link.snr > 0 ? '+' : ''}${latest.link.snr.toFixed(1)} dB` : '--'}</KV>
-            <KV label="Uplink RSSI (Payload)">{latest?.link.uplinkRssi !== null && latest?.link.uplinkRssi !== undefined ? `${latest.link.uplinkRssi} dBm` : '--'}</KV>
-            <KV label="Uplink SNR (Payload)">{latest?.link.uplinkSnr !== null && latest?.link.uplinkSnr !== undefined ? `${latest.link.uplinkSnr > 0 ? '+' : ''}${latest.link.uplinkSnr.toFixed(1)} dB` : '--'}</KV>
+            <KV label="Downlink RSSI (Ground)">{latest?.link.rssi !== null && latest?.link.rssi !== undefined ? `${latest.link.rssi} dBm` : conn.mode === 'usb' ? '-- (USB direct)' : '--'}</KV>
+            <KV label="Downlink SNR (Ground)">{latest?.link.snr !== null && latest?.link.snr !== undefined ? `${latest.link.snr > 0 ? '+' : ''}${latest.link.snr.toFixed(1)} dB` : conn.mode === 'usb' ? '-- (USB direct)' : '--'}</KV>
+            <KV label="Uplink RSSI (Payload)">{latest?.link.uplinkRssi !== null && latest?.link.uplinkRssi !== undefined ? `${latest.link.uplinkRssi} dBm` : conn.mode === 'usb' ? '-- (USB direct)' : '--'}</KV>
+            <KV label="Uplink SNR (Payload)">{latest?.link.uplinkSnr !== null && latest?.link.uplinkSnr !== undefined ? `${latest.link.uplinkSnr > 0 ? '+' : ''}${latest.link.uplinkSnr.toFixed(1)} dB` : conn.mode === 'usb' ? '-- (USB direct)' : '--'}</KV>
             <KV label="Commands / ACKs">{stats.commandsSent} / {stats.acks}</KV>
           </dl>
         </Panel>

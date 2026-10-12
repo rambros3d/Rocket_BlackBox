@@ -13,6 +13,11 @@ public:
     // not the dashboard receive time or the telemetry sampling schedule.
     static uint32_t uptimeSeconds();
     static uint16_t lastVocRaw() { return _lastVocRaw; }
+    static void recordUplink(float rssi, float snr) {
+        _lastUplinkRssi = rssi;
+        _lastUplinkSnr = snr;
+        _hasUplink = true;
+    }
 
 private:
     static uint16_t _seq;
@@ -20,4 +25,7 @@ private:
     static float _lastBaroAltM;
     static uint32_t _lastBaroMs;
     static float _vSpeedFiltered;
+    static float _lastUplinkRssi;
+    static float _lastUplinkSnr;
+    static bool _hasUplink;
 };

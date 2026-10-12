@@ -241,7 +241,11 @@ void writeJson(Print& out, const TelemetryFrame& f) {
     out.printf(",\"cal\":[%u,%u,%u,%u]},", f.calSys, f.calGyro, f.calAccel, f.calMag);
 
     out.print("\"sys\":{\"bat\":"); num(out, f.batteryV, 2);
-    out.printf(",\"bat_pct\":%u,\"mcu_t\":%d}}\n", f.batteryPct, f.mcuTempC);
+    out.printf(",\"bat_pct\":%u,\"mcu_t\":%d}", f.batteryPct, f.mcuTempC);
+    if (f.hasUplink) {
+        out.printf(",\"link\":{\"uplink_rssi\":%.1f,\"uplink_snr\":%.1f}", f.uplinkRssi, f.uplinkSnr);
+    }
+    out.print("}\n");
 }
 
 }  // namespace Telemetry

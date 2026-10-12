@@ -5,6 +5,10 @@ const TFEND = 0xdc
 const TFESC = 0xdd
 
 export const KISS_DATA = 0x00
+export const KISS_TXDELAY = 0x01
+export const KISS_PERSISTENCE = 0x02
+export const KISS_SLOTTIME = 0x03
+export const KISS_FULLDUPLEX = 0x05
 export const KISS_HARDWARE = 0x06
 
 export interface KissFrame {

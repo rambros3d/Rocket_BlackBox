@@ -276,6 +276,7 @@ export function fromJson(o: Json, t = Date.now()): Frame {
   const e = o.env ?? {}
   const m = o.imu ?? {}
   const s = o.sys ?? {}
+  const l = o.link ?? {}
   const cal = Array.isArray(m.cal) ? m.cal : [0, 0, 0, 0]
   return {
     t,
@@ -299,6 +300,11 @@ export function fromJson(o: Json, t = Date.now()): Frame {
       gx: n(m.gx), gy: n(m.gy), gz: n(m.gz), cal: [n(cal[0]), n(cal[1]), n(cal[2]), n(cal[3])],
     },
     sys: { bat: n(s.bat), batPct: n(s.bat_pct), mcuT: n(s.mcu_t) },
-    link: { rssi: null, snr: null },
+    link: {
+      rssi: null,
+      snr: null,
+      uplinkRssi: typeof l.uplink_rssi === 'number' ? l.uplink_rssi : null,
+      uplinkSnr: typeof l.uplink_snr === 'number' ? l.uplink_snr : null,
+    },
   }
 }

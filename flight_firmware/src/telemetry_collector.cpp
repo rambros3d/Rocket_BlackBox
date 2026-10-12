@@ -17,6 +17,9 @@ uint16_t TelemetryCollector::_lastVocRaw = 0;
 float TelemetryCollector::_lastBaroAltM = NAN;
 uint32_t TelemetryCollector::_lastBaroMs = 0;
 float TelemetryCollector::_vSpeedFiltered = 0.0f;
+float TelemetryCollector::_lastUplinkRssi = 0.0f;
+float TelemetryCollector::_lastUplinkSnr = 0.0f;
+bool TelemetryCollector::_hasUplink = false;
 
 void TelemetryCollector::begin(float samplingIntervalS) {
     if (!s_vocAlgorithm) s_vocAlgorithm = new VOCGasIndexAlgorithm(samplingIntervalS);
@@ -157,4 +160,7 @@ void TelemetryCollector::collect(TelemetryFrame& f) {
     f.batteryV = PowerManager::readBatteryVoltage();
     f.batteryPct = PowerManager::getBatteryPercentage();
     f.mcuTempC = (int8_t)constrain(temperatureRead(), -128.0f, 127.0f);
+    f.uplinkRssi = _lastUplinkRssi;
+    f.uplinkSnr = _lastUplinkSnr;
+    f.hasUplink = _hasUplink;
 }
