@@ -3,10 +3,12 @@ import type { Frame, SourceName } from './types'
 // Binary protocol shared with flight_firmware/src/telemetry_packet.{h,cpp}
 export const MAGIC_R = 0x52 // 'R'
 export const MAGIC_B = 0x42 // 'B' telemetry frame
+export const MAGIC_F = 0x46 // 'F' fast attitude/barometer frame
 export const MAGIC_A = 0x41 // 'A' command acknowledgement
 export const MAGIC_C = 0x43 // 'C' uplink command
 export const PROTOCOL_VERSION = 1
 export const FRAME_SIZE = 90
+export const FAST_FRAME_SIZE = 20
 export const ACK_SIZE = 13
 
 export const Command = {
@@ -109,6 +111,36 @@ export function decodeFrame(buf: Uint8Array, off: number, t = Date.now()): Frame
   }
 }
 
+export interface FastFrame {
+  t: number
+  seq: number
+  up: number
+  roll: number
+  pitch: number
+  yaw: number
+  alt: number
+  vs: number
+}
+
+export function decodeFastFrame(buf: Uint8Array, off: number, t = Date.now()): FastFrame | null {
+  if (off + FAST_FRAME_SIZE > buf.length) return null
+  if (buf[off] !== MAGIC_R || buf[off + 1] !== MAGIC_F || buf[off + 2] !== PROTOCOL_VERSION) return null
+  const dv = new DataView(buf.buffer, buf.byteOffset + off, FAST_FRAME_SIZE)
+  if (crc16(buf, off, off + FAST_FRAME_SIZE - 2) !== dv.getUint16(18, true)) return null
+  const altitudeRaw = dv.getUint8(13) | (dv.getUint8(14) << 8) | (dv.getUint8(15) << 16)
+  const altitudeCm = altitudeRaw & 0x800000 ? altitudeRaw - 0x1000000 : altitudeRaw
+  return {
+    t,
+    seq: dv.getUint16(3, true),
+    up: dv.getUint16(5, true),
+    roll: dv.getInt16(7, true) / 10,
+    pitch: dv.getInt16(9, true) / 10,
+    yaw: dv.getUint16(11, true) / 10,
+    alt: altitudeCm / 100,
+    vs: dv.getInt16(16, true) / 10,
+  }
+}
+
 export function encodeCommand(cmd: number, arg = 0): Uint8Array {
   const out = new Uint8Array(8)
   const dv = new DataView(out.buffer)
@@ -123,6 +155,7 @@ export function encodeCommand(cmd: number, arg = 0): Uint8Array {
 
 export type StreamEvent =
   | { kind: 'frame'; frame: Frame }
+  | { kind: 'fast-frame'; frame: FastFrame }
   | { kind: 'ack'; cmd: number; status: number; dev: string; rssi?: number; snr?: number }
   | { kind: 'rssi'; rssi: number }
   | { kind: 'text'; text: string }
@@ -155,8 +188,9 @@ export class LoRaStreamParser {
         continue
       }
 
-      if (b[i] === MAGIC_R && i + 1 < b.length && (b[i + 1] === MAGIC_B || b[i + 1] === MAGIC_A)) {
+      if (b[i] === MAGIC_R && i + 1 < b.length && (b[i + 1] === MAGIC_B || b[i + 1] === MAGIC_F || b[i + 1] === MAGIC_A)) {
         const isFrame = b[i + 1] === MAGIC_B
+        const isFast = b[i + 1] === MAGIC_F
         if (i + 2 < b.length && b[i + 2] === PROTOCOL_VERSION) {
           if (isFrame) {
             if (i + FRAME_SIZE > b.length) break // wait for the rest of the packet
@@ -165,6 +199,16 @@ export class LoRaStreamParser {
               this.flushText(events)
               events.push({ kind: 'frame', frame })
               i += FRAME_SIZE
+              this.expectRssi = this.rssiByteEnabled
+              continue
+            }
+          } else if (isFast) {
+            if (i + FAST_FRAME_SIZE > b.length) break
+            const frame = decodeFastFrame(b, i, now)
+            if (frame) {
+              this.flushText(events)
+              events.push({ kind: 'fast-frame', frame })
+              i += FAST_FRAME_SIZE
               this.expectRssi = this.rssiByteEnabled
               continue
             }

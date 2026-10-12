@@ -60,6 +60,7 @@ public:
     static void initSensors(Print& out);
     static void runAllDiagnostics(Print& out);
     static void readAllSensors(EnvDiagnosticResults& res);
+    static void readFastBarometer(EnvDiagnosticResults& res);
     static void printTelemetryRow(Print& out);
 
 private:

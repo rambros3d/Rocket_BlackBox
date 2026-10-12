@@ -44,13 +44,36 @@ void TelemetryCollector::collect(TelemetryFrame& f) {
     begin();
     memset(&f, 0, sizeof(f));
 
-    EnvDiagnosticResults env{};
-    EnvSensorsManager::readAllSensors(env);
+    static EnvDiagnosticResults env{};
+    static uint32_t lastSlowMs = 0;
+    static bool slowInitialized = false;
+    static uint16_t cachedVocIndex = 0;
+    static uint16_t cachedNoxIndex = 0;
+    static float cachedBatteryV = 0.0f;
+    static uint8_t cachedBatteryPct = 0;
+    static int8_t cachedMcuTempC = 0;
+    const uint32_t now = millis();
+    const bool slowSample = !slowInitialized || (uint32_t)(now - lastSlowMs) >= 1000;
+    if (slowSample) {
+        env = {};
+        EnvSensorsManager::readAllSensors(env);
+        lastSlowMs = now;
+        slowInitialized = true;
+        if (env.sgp41Detected) {
+            _lastVocRaw = env.sgp41RawVoc;
+            cachedVocIndex = (uint16_t)max<int32_t>(0, s_vocAlgorithm->process(env.sgp41RawVoc));
+            cachedNoxIndex = (uint16_t)max<int32_t>(0, s_noxAlgorithm->process(env.sgp41RawNox));
+        }
+        cachedBatteryV = PowerManager::readBatteryVoltage();
+        cachedBatteryPct = PowerManager::getBatteryPercentage();
+        cachedMcuTempC = (int8_t)constrain(temperatureRead(), -128.0f, 127.0f);
+    } else {
+        EnvSensorsManager::readFastBarometer(env);
+    }
     IMUDiagnosticResults imu{};
     const bool imuOk = IMUSensorManager::readLiveData(imu);
     const GPSDiagnosticResults gps = GPSDiagnosticsManager::getResults();
 
-    const uint32_t now = millis();
     f.deviceId = deviceId();
     f.seq = _seq++;
     f.uptimeS = uptimeSeconds();
@@ -124,11 +147,8 @@ void TelemetryCollector::collect(TelemetryFrame& f) {
     }
 
     f.co2Ppm = env.scd40Detected ? env.scd40Co2Ppm : 0;
-    if (env.sgp41Detected) {
-        _lastVocRaw = env.sgp41RawVoc;
-        f.vocIndex = (uint16_t)max<int32_t>(0, s_vocAlgorithm->process(env.sgp41RawVoc));
-        f.noxIndex = (uint16_t)max<int32_t>(0, s_noxAlgorithm->process(env.sgp41RawNox));
-    }
+    f.vocIndex = cachedVocIndex;
+    f.noxIndex = cachedNoxIndex;
 
     if (env.tsl2591Detected && env.tsl2591Lux >= 0.0f) {
         f.lux = env.tsl2591Lux;
@@ -157,9 +177,9 @@ void TelemetryCollector::collect(TelemetryFrame& f) {
         f.calMag = imu.calMag;
     }
 
-    f.batteryV = PowerManager::readBatteryVoltage();
-    f.batteryPct = PowerManager::getBatteryPercentage();
-    f.mcuTempC = (int8_t)constrain(temperatureRead(), -128.0f, 127.0f);
+    f.batteryV = cachedBatteryV;
+    f.batteryPct = cachedBatteryPct;
+    f.mcuTempC = cachedMcuTempC;
     f.uplinkRssi = _lastUplinkRssi;
     f.uplinkSnr = _lastUplinkSnr;
     f.hasUplink = _hasUplink;

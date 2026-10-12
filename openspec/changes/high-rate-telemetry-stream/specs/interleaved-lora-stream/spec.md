@@ -5,7 +5,7 @@ The payload firmware SHALL alternate LoRa transmission between a Full Telemetry 
 
 #### Scenario: Periodic alternation
 - **WHEN** the transmission loop executes under SF9
-- **THEN** it SHALL transmit one 88-byte Full packet at $t=0\text{ ms}$ (513 ms ToA) and one 20-byte Fast packet at $t=500\text{ ms}$ (185 ms ToA), keeping total channel occupancy below 700 ms per second.
+- **THEN** it SHALL transmit one 90-byte Full packet at $t=0\text{ ms}$ (about 513 ms ToA including the 3-byte air prefix) and one 20-byte Fast packet no earlier than $t=550\text{ ms}$ (about 185 ms ToA), keeping nominal channel occupancy below 700 ms per second.
 
 #### Scenario: Uplink window availability
 - **WHEN** transmission is inactive between packets

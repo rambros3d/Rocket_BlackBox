@@ -123,6 +123,21 @@ struct __attribute__((packed)) TelemetryPacket {
     uint16_t crc;
 };
 
+// 20-byte fast frame: 16-bit uptime (seconds modulo 65536) and signed 24-bit
+// altitude in centimetres keep SF9 airtime within the 185 ms budget.
+struct __attribute__((packed)) FastTelemetryPacket {
+    uint8_t magic[2];       // 'R','F'
+    uint8_t version;
+    uint16_t seq;
+    uint16_t uptimeS;
+    int16_t rollX10;
+    int16_t pitchX10;
+    uint16_t yawX10;
+    uint8_t baroAltCm[3];
+    int16_t vSpeedDms;
+    uint16_t crc;
+};
+
 // Dashboard -> payload uplink (sent through the USB-TO-LoRa dongle)
 enum TelemetryCommand : uint8_t {
     CMD_PING      = 0x01,
@@ -152,6 +167,7 @@ struct __attribute__((packed)) AckPacket {
 namespace Telemetry {
     uint16_t crc16(const uint8_t* data, size_t len);
     size_t encode(const TelemetryFrame& f, TelemetryPacket& out);
+    size_t encodeFast(const TelemetryFrame& f, FastTelemetryPacket& out);
     bool decode(const uint8_t* data, size_t len, TelemetryFrame& out);
 
     // Scans a received buffer (which may carry DTU header bytes) for a valid command.

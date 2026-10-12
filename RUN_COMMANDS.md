@@ -2,8 +2,9 @@
 
 These commands are for the RAK3112 payload running `rocket_payload_telemetry`
 and the Waveshare USB dongle running the custom KISS firmware. Run them from
-the repository root on macOS. The payload transmits once per second without a
-computer command; the terminal program is needed to configure the dongle's
+the repository root on macOS. The payload transmits one full and one fast LoRa
+packet each second without a computer command and emits USB JSON at about 4 Hz;
+the terminal program is needed to configure the dongle's
 radio and display the received packets.
 
 ## 1. Find the two USB ports
@@ -17,7 +18,7 @@ On the tested setup, the payload **application** port was
 `/dev/cu.usbmodemA4CB8FC7E48C2` (Espressif `303A:1001`) and the Waveshare
 dongle was `/dev/cu.usbmodem5B901624291` (CH343 `1A86:55D3`). Port names can
 change after reconnecting. The payload **download-mode** port was
-`/dev/cu.usbmodem1101`; that mode does not run the flight application.
+`/dev/cu.usbmodem11201` in the latest flash; that mode does not run the flight application.
 
 ## 2. Receive LoRa telemetry on the Waveshare dongle
 
@@ -33,8 +34,10 @@ Replace the port if `find_port.py --list` shows a different CH343 device.
 Press Ctrl-C to stop. For a short link test, add `--count 5 --timeout 15`.
 The program configures the dongle in RAM for 866 MHz, SF9, 125 kHz bandwidth,
 and coding rate 4/5; **run it again after unplugging or resetting the dongle**.
-Each line is one CRC-checked packet. `status.bno055: true` plus non-null
-`imu.ax/ay/az` confirms the BNO055 data crossed the LoRa link.
+Each line is one CRC-checked full or fast packet. A full packet with
+`status.bno055: true` and non-null `imu.ax/ay/az` confirms the BNO055 data
+crossed the LoRa link; fast packets carry the frequently changing motion and
+altitude fields.
 
 If `link.rssi` and `link.snr` are `null`, check the dongle's raw KISS receive
 metadata. The firmware image currently on the connected dongle emitted
@@ -71,8 +74,10 @@ when available. Otherwise, click **Connect LoRa Receiver** (on **Devices** or th
 topbar menu) and select the port to grant permission once; auto-connect will then
 reconnect on future sessions and when plugged in. The dashboard configures the
 custom KISS firmware and displays each received packet. Demo data is disabled;
-packet counts, sequence gaps, and arrival rate replace the unverified RSSI/SNR
-display. Stop the terminal receiver before connecting the dashboard: they cannot
+packet counts, sequence gaps, and arrival rate remain useful while RSSI/SNR
+metadata is invalid. Automatic pings are disabled to avoid disrupting the
+high-rate receive stream; the manual **Ping** control is still available.
+Stop the terminal receiver before connecting the dashboard: they cannot
 both open the same serial port.
 
 ## 3. View the payload's own USB output

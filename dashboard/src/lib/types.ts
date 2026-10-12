@@ -5,6 +5,8 @@ export interface Frame {
   /** Host receive time, ms since epoch */
   t: number
   source: LinkMode
+  /** Fast LoRa packet merged with the last complete frame. */
+  fast?: boolean
   dev: string
   fw?: string
   seq: number

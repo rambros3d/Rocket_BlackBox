@@ -32,7 +32,11 @@ public:
     static void logTelemetry(uint32_t timestampMs, float vBat, float pressureHpa, float altM,
                              float tempC, float humPct,
                              uint16_t co2Ppm, uint16_t vocTicks, double lat, double lon,
-                             float gpsAltM, uint8_t sats, bool fix, uint32_t ppsCount);
+                             float gpsAltM, uint8_t sats, bool fix, uint32_t ppsCount,
+                             float rollDeg = 0, float pitchDeg = 0, float yawDeg = 0,
+                             float verticalSpeedMs = 0,
+                             float accX = 0, float accY = 0, float accZ = 0,
+                             float gyrX = 0, float gyrY = 0, float gyrZ = 0);
     static void updateLogger();
 
 private:

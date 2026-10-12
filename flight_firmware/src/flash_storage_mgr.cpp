@@ -290,7 +290,7 @@ bool FlashStorageManager::startFlightLogging(Print& out) {
     }
 
     // Write CSV Header
-    fputs("timestamp_ms,vbat_v,pressure_hpa,altitude_m,temp_c,humidity_pct,co2_ppm,voc_ticks,lat,lon,gps_alt_m,sats,fix,pps_count\n", _logFile);
+    fputs("timestamp_ms,vbat_v,pressure_hpa,altitude_m,temp_c,humidity_pct,co2_ppm,voc_ticks,lat,lon,gps_alt_m,sats,fix,pps_count,roll_deg,pitch_deg,yaw_deg,vertical_speed_ms,acc_x,acc_y,acc_z,gyro_x,gyro_y,gyro_z\n", _logFile);
     fflush(_logFile);
 
     _loggingActive = true;
@@ -327,12 +327,17 @@ const char* FlashStorageManager::getCurrentLogFile() {
 void FlashStorageManager::logTelemetry(uint32_t timestampMs, float vBat, float pressureHpa, float altM,
                                       float tempC, float humPct,
                                       uint16_t co2Ppm, uint16_t vocTicks, double lat, double lon,
-                                      float gpsAltM, uint8_t sats, bool fix, uint32_t ppsCount) {
+                                      float gpsAltM, uint8_t sats, bool fix, uint32_t ppsCount,
+                                      float rollDeg, float pitchDeg, float yawDeg, float verticalSpeedMs,
+                                      float accX, float accY, float accZ,
+                                      float gyrX, float gyrY, float gyrZ) {
     if (!_loggingActive || !_logFile) return;
 
-    fprintf(_logFile, "%lu,%.2f,%.2f,%.2f,%.2f,%.1f,%u,%u,%.6f,%.6f,%.1f,%u,%d,%lu\n",
+    fprintf(_logFile, "%lu,%.2f,%.2f,%.2f,%.2f,%.1f,%u,%u,%.6f,%.6f,%.1f,%u,%d,%lu,%.1f,%.1f,%.1f,%.2f,%.2f,%.2f,%.2f,%.1f,%.1f,%.1f\n",
             (unsigned long)timestampMs, vBat, pressureHpa, altM, tempC, humPct, co2Ppm, vocTicks,
-            lat, lon, gpsAltM, sats, fix ? 1 : 0, (unsigned long)ppsCount);
+            lat, lon, gpsAltM, sats, fix ? 1 : 0, (unsigned long)ppsCount,
+            rollDeg, pitchDeg, yawDeg, verticalSpeedMs,
+            accX, accY, accZ, gyrX, gyrY, gyrZ);
     _recordCount++;
 
     // Periodic flush every 1 second to safeguard against power cutoff

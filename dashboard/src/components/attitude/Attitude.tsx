@@ -71,7 +71,7 @@ function useAttitudeScene(attitude: Attitude | null, build: Builder, cameraPos: 
 
     let raf = 0
     const tick = () => {
-      body.quaternion.slerp(target.current, 0.12)
+      body.quaternion.slerp(target.current, 0.35)
       renderer.render(scene, camera)
       raf = requestAnimationFrame(tick)
     }

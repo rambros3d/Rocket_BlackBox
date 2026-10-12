@@ -16,7 +16,7 @@
 #include "comment_print.h"
 
 #ifndef TELEMETRY_INTERVAL_MS
-#define TELEMETRY_INTERVAL_MS 1000
+#define TELEMETRY_INTERVAL_MS 250
 #endif
 #ifndef FLIGHT_AUTOLOG
 #define FLIGHT_AUTOLOG 1
@@ -24,6 +24,11 @@
 
 static bool s_usbStream = true;
 static uint32_t s_lastFrameMs = 0;
+static uint32_t s_lastFullTxMs = 0;
+static uint16_t s_radioSeq = 0;
+static bool s_haveFrame = false;
+static bool s_fastPending = false;
+static TelemetryFrame s_latestFrame{};
 static uint32_t s_txOk = 0;
 static uint32_t s_txSkipped = 0;
 static uint32_t s_cmdRx = 0;
@@ -115,7 +120,7 @@ void setup() {
     SDDiagnosticsManager::initSDMMC(log);
     GPSDiagnosticsManager::initGPS(log);
     LoRaRadio::begin(log);
-    TelemetryCollector::begin(TELEMETRY_INTERVAL_MS / 1000.0f);
+    TelemetryCollector::begin(1.0f);  // Gas index advances only on the 1 Hz slow tick.
 
     if (FLIGHT_AUTOLOG && FlashStorageManager::isMounted()) {
         FlashStorageManager::startFlightLogging(log);
@@ -170,32 +175,54 @@ void loop() {
     }
 
     uint32_t now = millis();
-    if (now - s_lastFrameMs < TELEMETRY_INTERVAL_MS) return;
-    s_lastFrameMs = now;
+    if ((uint32_t)(now - s_lastFrameMs) >= TELEMETRY_INTERVAL_MS) {
+        s_lastFrameMs = now;
+        TelemetryCollector::collect(s_latestFrame);
+        s_haveFrame = true;
 
-    TelemetryFrame frame;
-    TelemetryCollector::collect(frame);
-
-    if (LoRaRadio::isReady()) {
-        TelemetryPacket packet;
-        size_t len = Telemetry::encode(frame, packet);
-        if (LoRaRadio::send(reinterpret_cast<const uint8_t*>(&packet), len)) {
-            s_txOk++;
-        } else {
-            s_txSkipped++;
+        if (s_usbStream) Telemetry::writeJson(Serial, s_latestFrame);
+        if (FlashStorageManager::isLogging()) {
+            const auto& f = s_latestFrame;
+            FlashStorageManager::logTelemetry(
+                now, f.batteryV, f.pressureHpa, f.baroAltM,
+                f.temperatureC, f.humidityPct,
+                f.co2Ppm, TelemetryCollector::lastVocRaw(),
+                f.latitude, f.longitude, f.gpsAltM,
+                f.satellites, f.gpsFix > 0, GPSDiagnosticsManager::getResults().ppsPulseCount,
+                f.rollDeg, f.pitchDeg, f.yawDeg, f.verticalSpeedMs,
+                f.accX, f.accY, f.accZ, f.gyrX, f.gyrY, f.gyrZ);
         }
     }
 
-    if (s_usbStream) {
-        Telemetry::writeJson(Serial, frame);
+    // A 90-byte full frame needs about 513 ms at SF9. Start the fast slot
+    // after 550 ms and give ACKs priority.
+    if (!s_haveFrame || !LoRaRadio::isReady() || s_ackPending) return;
+    now = millis();
+    if (s_fastPending && (uint32_t)(now - s_lastFullTxMs) >= 1000) {
+        // A late fast frame would displace the next full environmental update.
+        s_fastPending = false;
+        s_txSkipped++;
     }
-
-    if (FlashStorageManager::isLogging()) {
-        FlashStorageManager::logTelemetry(
-            now, frame.batteryV, frame.pressureHpa, frame.baroAltM,
-            frame.temperatureC, frame.humidityPct,
-            frame.co2Ppm, TelemetryCollector::lastVocRaw(),
-            frame.latitude, frame.longitude, frame.gpsAltM,
-            frame.satellites, frame.gpsFix > 0, GPSDiagnosticsManager::getResults().ppsPulseCount);
+    if (s_fastPending && (uint32_t)(now - s_lastFullTxMs) >= 550) {
+        FastTelemetryPacket packet;
+        TelemetryFrame radioFrame = s_latestFrame;
+        radioFrame.seq = s_radioSeq;
+        Telemetry::encodeFast(radioFrame, packet);
+        if (LoRaRadio::send(reinterpret_cast<const uint8_t*>(&packet), sizeof(packet))) {
+            s_fastPending = false;
+            s_radioSeq++;
+            s_txOk++;
+        }
+    } else if (!s_fastPending && (!s_lastFullTxMs || (uint32_t)(now - s_lastFullTxMs) >= 1000)) {
+        TelemetryPacket packet;
+        TelemetryFrame radioFrame = s_latestFrame;
+        radioFrame.seq = s_radioSeq;
+        Telemetry::encode(radioFrame, packet);
+        if (LoRaRadio::send(reinterpret_cast<const uint8_t*>(&packet), sizeof(packet))) {
+            s_lastFullTxMs = now;
+            s_fastPending = true;
+            s_radioSeq++;
+            s_txOk++;
+        }
     }
 }

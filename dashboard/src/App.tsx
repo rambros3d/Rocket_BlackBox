@@ -33,7 +33,8 @@ function useTelemetryRuntime() {
 
   useEffect(() => {
     if (!autoRefresh) return
-    const id = setInterval(() => useTelemetry.getState().commitView(), mode === 'lora' ? 250 : refreshSec * 1000)
+    if (mode === 'lora') return
+    const id = setInterval(() => useTelemetry.getState().commitView(), mode === 'demo' ? refreshSec * 1000 : 250)
     return () => clearInterval(id)
   }, [autoRefresh, refreshSec, mode])
 

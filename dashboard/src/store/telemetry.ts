@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { FLAG, type Alert, type AlertSeverity, type Frame, type LinkMode, type TrackPoint } from '../lib/types'
 import { useSettings } from './settings'
+import type { FastFrame } from '../lib/protocol'
 
 export type ConnStatus = 'disconnected' | 'connecting' | 'connected'
 
@@ -55,6 +56,7 @@ interface TelemetryState {
   command: CommandState | null
 
   ingest: (frame: Frame) => void
+  ingestFast: (frame: FastFrame) => void
   applyRssi: (rssi: number) => void
   applyLinkMetrics: (rssi: number, snr: number) => void
   applyUplinkMetrics: (rssi: number, snr: number) => void
@@ -203,7 +205,7 @@ export const useTelemetry = create<TelemetryState>()((set, get) => ({
     if (drop) frames = frames.slice(drop)
 
     let track = s.live.track
-    if (frame.gps.fix > 0 && (frame.gps.lat !== 0 || frame.gps.lon !== 0)) {
+    if (!frame.fast && frame.gps.fix > 0 && (frame.gps.lat !== 0 || frame.gps.lon !== 0)) {
       track = [...track, { t: now, lat: frame.gps.lat, lon: frame.gps.lon, alt: frame.gps.alt, baroAlt: frame.baro.alt, spd: frame.gps.spd }]
       let tdrop = 0
       while (tdrop < track.length && track[tdrop].t < now - historyMs) tdrop++
@@ -217,9 +219,10 @@ export const useTelemetry = create<TelemetryState>()((set, get) => ({
       if (gap > 1 && gap < 1000) stats.lost += gap - 1
     }
     stats.lastSeq = frame.seq
-    if (s.conn.lastFrameAt) {
-      const dt = (now - s.conn.lastFrameAt) / 1000
-      if (dt > 0 && dt < 30) stats.rateHz = s.stats.rateHz ? s.stats.rateHz * 0.8 + (1 / dt) * 0.2 : 1 / dt
+    if (frames.length > 1) {
+      const first = Math.max(0, frames.length - 21)
+      const elapsedMs = now - frames[first].t
+      if (elapsedMs > 0) stats.rateHz = ((frames.length - 1 - first) * 1000) / elapsedMs
     }
 
     const live = { latest: frame, frames, track, at: now }
@@ -233,8 +236,23 @@ export const useTelemetry = create<TelemetryState>()((set, get) => ({
       stats,
       alerts,
       conn: { ...s.conn, lastFrameAt: now, lastRxAt: now },
-      // Show the first frame immediately rather than waiting for the next refresh tick
-      ...(s.view.latest ? {} : { view: live }),
+      // LoRa packets already arrive slowly enough to render individually.
+      // Publishing them immediately avoids adding a refresh-timer delay to attitude.
+      ...(!s.view.latest || (frame.source === 'lora' && useSettings.getState().autoRefresh) ? { view: live } : {}),
+    })
+  },
+
+  ingestFast: (fast) => {
+    const previous = get().live.latest
+    if (!previous || previous.source !== 'lora') return
+    get().ingest({
+      ...previous,
+      t: fast.t,
+      seq: fast.seq,
+      up: fast.up,
+      fast: true,
+      imu: { ...previous.imu, roll: fast.roll, pitch: fast.pitch, yaw: fast.yaw },
+      baro: { ...previous.baro, alt: fast.alt, vs: fast.vs },
     })
   },
 

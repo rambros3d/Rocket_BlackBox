@@ -74,9 +74,6 @@ class LinkController {
   private autoConnectTimer: ReturnType<typeof setInterval> | null = null
   private autoConnectListenerAttached = false
   private lastAutoConnectError = 0
-  private pingTimer: ReturnType<typeof setInterval> | null = null
-  private pingScheduledTimer: ReturnType<typeof setTimeout> | null = null
-  private lastPingSentAt = 0
   busy = false
 
   get isDemo() {
@@ -172,9 +169,6 @@ class LinkController {
         await sleep(350)
         await this.write('i\n')
       }
-      if (mode === 'lora') {
-        this.startPingLoop()
-      }
     } catch (error) {
       if (!this.port?.readable) {
         await this.disconnect(false)
@@ -189,7 +183,6 @@ class LinkController {
     this.disconnecting = true
 
     try {
-      this.stopPingLoop()
       this.keepReading = false
       this.busy = false
       this.writeChain = Promise.resolve()
@@ -363,58 +356,6 @@ class LinkController {
     }
   }
 
-  private startPingLoop() {
-    this.stopPingLoop()
-    this.lastPingSentAt = 0
-    // Periodic fallback if no telemetry frames are arriving
-    this.pingTimer = setInterval(() => {
-      if (Date.now() - this.lastPingSentAt >= 5000) {
-        void this.sendPingUplink()
-      }
-    }, 5000)
-  }
-
-  private stopPingLoop() {
-    if (this.pingTimer) {
-      clearInterval(this.pingTimer)
-      this.pingTimer = null
-    }
-    if (this.pingScheduledTimer) {
-      clearTimeout(this.pingScheduledTimer)
-      this.pingScheduledTimer = null
-    }
-  }
-
-  private scheduleSynchronizedPing() {
-    if (this.mode !== 'lora' || !this.port || this.busy) return
-    const now = Date.now()
-    const latest = useTelemetry.getState().live.latest
-    // Poll more aggressively (every 2s) until first uplink ACK is verified, then every 4s
-    const minInterval = latest?.link.uplinkRssi !== null && latest?.link.uplinkRssi !== undefined ? 4000 : 2000
-    if (now - this.lastPingSentAt < minInterval) return
-    if (this.pingScheduledTimer) return
-
-    // Settle delay: give the payload SX1262 transceiver 80ms to finish TX and settle into RX mode
-    this.pingScheduledTimer = setTimeout(() => {
-      this.pingScheduledTimer = null
-      void this.sendPingUplink()
-    }, 80)
-  }
-
-  private async sendPingUplink() {
-    if (this.mode !== 'lora' || !this.port || this.busy) return
-    const currentCmd = useTelemetry.getState().command
-    if (currentCmd?.status === 'pending') return
-    this.lastPingSentAt = Date.now()
-    const packet = encodeCommand(Command.PING)
-    try {
-      await this.write(encodeKiss(KISS_DATA, packet))
-      useTelemetry.getState().noteCommandSent()
-    } catch {
-      // Ignore ping failure silently
-    }
-  }
-
   private async runReadLoop(port: SerialPort) {
     while (this.keepReading && port.readable) {
       this.reader = port.readable.getReader()
@@ -443,15 +384,12 @@ class LinkController {
         if (packet.command === KISS_DATA) {
           this.loraParser.reset()
           const events = this.loraParser.push(packet.body, now)
-          const hasBinaryFrame = events.some((ev) => ev.kind === 'frame' || ev.kind === 'ack')
-          if (hasBinaryFrame) {
-            // Asynchronously query ground dongle instantaneous SX1262 signal strength
-            void this.write(encodeKiss(KISS_HARDWARE, Uint8Array.of(0x0d)))
-          }
+          const hasBinaryFrame = events.some((ev) => ev.kind === 'frame' || ev.kind === 'fast-frame' || ev.kind === 'ack')
           for (const ev of events) {
             if (ev.kind === 'frame') {
               t.ingest(ev.frame)
-              this.scheduleSynchronizedPing()
+            } else if (ev.kind === 'fast-frame') {
+              t.ingestFast(ev.frame)
             } else if (ev.kind === 'text' && !hasBinaryFrame) {
               t.log('rx', ev.text)
             } else if (ev.kind === 'ack') {
@@ -469,10 +407,7 @@ class LinkController {
           const body = packet.body
           if (body[0] === 0x8d && body.length >= 2) {
             const rssi = (body[1] << 24) >> 24
-            if (rssi < 0) {
-              const snr = Number((rssi - (-108)).toFixed(1))
-              t.applyLinkMetrics(rssi, snr)
-            }
+            if (rssi < 0) t.applyRssi(rssi)
           } else if (body[0] === 0xf9 && body.length >= 3) {
             const rssi = (body[2] << 24) >> 24
             const snr = ((body[1] << 24) >> 24) / 4

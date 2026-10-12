@@ -2,6 +2,7 @@
 #include <math.h>
 
 static_assert(sizeof(TelemetryPacket) == 90, "TelemetryPacket layout changed; update dashboard/src/lib/protocol.ts");
+static_assert(sizeof(FastTelemetryPacket) == 20, "FastTelemetryPacket layout changed; update dashboard parser");
 
 namespace {
 
@@ -90,6 +91,25 @@ size_t encode(const TelemetryFrame& f, TelemetryPacket& p) {
     p.uviX100 = clampTo<uint16_t>(f.uvi * 100.0, 0, 65535);
 
     p.crc = crc16(reinterpret_cast<const uint8_t*>(&p), offsetof(TelemetryPacket, crc));
+    return sizeof(p);
+}
+
+size_t encodeFast(const TelemetryFrame& f, FastTelemetryPacket& p) {
+    memset(&p, 0, sizeof(p));
+    p.magic[0] = 'R';
+    p.magic[1] = 'F';
+    p.version = TELEMETRY_PROTOCOL_VERSION;
+    p.seq = f.seq;
+    p.uptimeS = f.uptimeS;
+    p.rollX10 = clampTo<int16_t>(f.rollDeg * 10.0, -32768, 32767);
+    p.pitchX10 = clampTo<int16_t>(f.pitchDeg * 10.0, -32768, 32767);
+    p.yawX10 = clampTo<uint16_t>(f.yawDeg * 10.0, 0, 3600);
+    const int32_t altitudeCm = clampTo<int32_t>(f.baroAltM * 100.0, -8388608, 8388607);
+    p.baroAltCm[0] = (uint8_t)altitudeCm;
+    p.baroAltCm[1] = (uint8_t)(altitudeCm >> 8);
+    p.baroAltCm[2] = (uint8_t)(altitudeCm >> 16);
+    p.vSpeedDms = clampTo<int16_t>(f.verticalSpeedMs * 10.0, -32768, 32767);
+    p.crc = crc16(reinterpret_cast<const uint8_t*>(&p), offsetof(FastTelemetryPacket, crc));
     return sizeof(p);
 }
 

@@ -16,7 +16,8 @@ import time
 import kissmon
 
 
-FRAME_SIZE = 88
+FRAME_SIZE = 90
+FAST_FRAME_SIZE = 20
 SOURCE = ("NONE", "MS5607", "BME680", "SCD40")
 FLAGS = ("ms5607", "bme680", "scd40", "sgp41", "ltr390", "tsl2591",
          "bno055", "gps_uart", "flash", "sdcard", "logging", "pps_lock", "gps_time")
@@ -35,7 +36,7 @@ def decode(payload):
     """Find a valid frame even if a legacy DTU prefix precedes the RB magic."""
     for offset in range(len(payload) - FRAME_SIZE + 1):
         b = payload[offset:offset + FRAME_SIZE]
-        if b[:3] != b"RB\x01" or crc16(b[:-2]) != struct.unpack_from("<H", b, 86)[0]:
+        if b[:3] != b"RB\x01" or crc16(b[:-2]) != struct.unpack_from("<H", b, 88)[0]:
             continue
 
         def u8(i): return b[i]
@@ -109,6 +110,30 @@ def decode(payload):
     return None
 
 
+def decode_fast(payload):
+    """Decode a 20-byte RF fast frame, including signed 24-bit altitude."""
+    for offset in range(len(payload) - FAST_FRAME_SIZE + 1):
+        b = payload[offset:offset + FAST_FRAME_SIZE]
+        if b[:3] != b"RF\x01" or crc16(b[:-2]) != struct.unpack_from("<H", b, 18)[0]:
+            continue
+        altitude_cm = int.from_bytes(b[13:16], "little", signed=True)
+        return {
+            "type": "fast_telemetry",
+            "seq": struct.unpack_from("<H", b, 3)[0],
+            "up": struct.unpack_from("<H", b, 5)[0],
+            "imu": {
+                "roll": struct.unpack_from("<h", b, 7)[0] / 10,
+                "pitch": struct.unpack_from("<h", b, 9)[0] / 10,
+                "yaw": struct.unpack_from("<H", b, 11)[0] / 10,
+            },
+            "baro": {
+                "alt": altitude_cm / 100,
+                "vs": struct.unpack_from("<h", b, 16)[0] / 10,
+            },
+        }
+    return None
+
+
 def configure(ser):
     radio = struct.pack("<II", 866000000, 125000) + b"\x09\x05"
     ser.write(kissmon.encode(kissmon.CMD_SETHARDWARE, b"\x09" + radio))
@@ -159,7 +184,7 @@ def main():
             while True:
                 for cmd, body in decoder.feed(ser.read(ser.in_waiting or 1)):
                     if cmd == kissmon.CMD_DATA:
-                        frame = decode(body)
+                        frame = decode(body) or decode_fast(body)
                         if frame is not None:
                             frame["link"] = {"rssi": None, "snr": None}
                             if pending is not None:

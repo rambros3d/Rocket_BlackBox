@@ -362,11 +362,7 @@ void EnvSensorsManager::runAllDiagnostics(Print& out) {
 }
 
 void EnvSensorsManager::readAllSensors(EnvDiagnosticResults& res) {
-    if (s_diagResults.ms5607Detected && sensorAcknowledges(s_ms5607Addr)) {
-        calculateMs5607(s_ms5607Addr, s_ms5607C, res.ms5607PressureHpa,
-                        res.ms5607TemperatureC, res.ms5607AltitudeM);
-        res.ms5607Detected = res.ms5607PressureHpa > 0.0f && isfinite(res.ms5607PressureHpa);
-    }
+    readFastBarometer(res);
     if (s_diagResults.bme680Detected && sensorAcknowledges(s_bme680Addr) && bme.performReading()) {
         res.bme680TemperatureC = bme.temperature;
         res.bme680PressureHpa = bme.pressure / 100.0f;
@@ -464,4 +460,13 @@ void EnvSensorsManager::readAllSensors(EnvDiagnosticResults& res) {
         }
     }
     if (recoveryMask & (1u << TSL2591)) initTSL2591();
+}
+
+void EnvSensorsManager::readFastBarometer(EnvDiagnosticResults& res) {
+    res.ms5607Detected = false;
+    if (s_diagResults.ms5607Detected && sensorAcknowledges(s_ms5607Addr)) {
+        calculateMs5607(s_ms5607Addr, s_ms5607C, res.ms5607PressureHpa,
+                        res.ms5607TemperatureC, res.ms5607AltitudeM);
+        res.ms5607Detected = res.ms5607PressureHpa > 0.0f && isfinite(res.ms5607PressureHpa);
+    }
 }
