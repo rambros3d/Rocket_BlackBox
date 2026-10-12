@@ -12,3 +12,7 @@ __pycache__/
 
 # External USB-to-LoRa firmware repositories (cloned sub-repos)
 usb-to-lora-firmwares/
+
+# Generated build artifacts for GitHub Pages (built by GitHub Actions)
+docs/dashboard/
+dashboard/dist/
