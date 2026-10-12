@@ -78,3 +78,12 @@ export function lightStatus(lux?: number): Status {
   if (lux < 2000) return { label: 'Normal', level: 'normal' }
   return { label: 'Bright', level: 'good' }
 }
+
+export function uviStatus(uvi?: number): Status {
+  if (uvi === undefined || uvi < 0) return none
+  if (uvi < 3) return { label: 'Low (0-2)', level: 'good' }
+  if (uvi < 6) return { label: 'Moderate (3-5)', level: 'moderate' }
+  if (uvi < 8) return { label: 'High (6-7)', level: 'poor' }
+  if (uvi < 11) return { label: 'Very High (8-10)', level: 'bad' }
+  return { label: 'Extreme (11+)', level: 'bad' }
+}

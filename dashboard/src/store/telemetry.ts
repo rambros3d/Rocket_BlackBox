@@ -57,6 +57,7 @@ interface TelemetryState {
   ingest: (frame: Frame) => void
   applyRssi: (rssi: number) => void
   applyLinkMetrics: (rssi: number, snr: number) => void
+  applyUplinkMetrics: (rssi: number, snr: number) => void
   commitView: () => void
   log: (dir: ConsoleLine['dir'], text: string) => void
   setConn: (patch: Partial<ConnState>) => void
@@ -183,6 +184,19 @@ export const useTelemetry = create<TelemetryState>()((set, get) => ({
     const historyMs = useSettings.getState().historyMin * 60_000
     const now = frame.t
 
+    const prevLink = s.live.latest?.link
+    if (prevLink) {
+      frame = {
+        ...frame,
+        link: {
+          rssi: frame.link.rssi ?? prevLink.rssi,
+          snr: frame.link.snr ?? prevLink.snr,
+          uplinkRssi: frame.link.uplinkRssi ?? prevLink.uplinkRssi ?? null,
+          uplinkSnr: frame.link.uplinkSnr ?? prevLink.uplinkSnr ?? null,
+        },
+      }
+    }
+
     let frames = s.live.frames.length ? [...s.live.frames, frame] : [frame]
     let drop = 0
     while (drop < frames.length && frames[drop].t < now - historyMs) drop++
@@ -236,7 +250,17 @@ export const useTelemetry = create<TelemetryState>()((set, get) => ({
   applyLinkMetrics: (rssi, snr) => {
     const { live, view } = get()
     if (!live.latest) return
-    const latest = { ...live.latest, link: { rssi, snr } }
+    const latest = { ...live.latest, link: { ...live.latest.link, rssi, snr } }
+    const frames = live.frames.slice()
+    frames[frames.length - 1] = latest
+    const updated = { ...live, latest, frames }
+    set({ live: updated, ...(view.latest?.t === latest.t ? { view: updated } : {}) })
+  },
+
+  applyUplinkMetrics: (rssi, snr) => {
+    const { live, view } = get()
+    if (!live.latest) return
+    const latest = { ...live.latest, link: { ...live.latest.link, uplinkRssi: rssi, uplinkSnr: snr } }
     const frames = live.frames.slice()
     frames[frames.length - 1] = latest
     const updated = { ...live, latest, frames }

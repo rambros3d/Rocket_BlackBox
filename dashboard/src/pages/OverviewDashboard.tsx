@@ -1,11 +1,11 @@
 import clsx from 'clsx'
 import type { ReactNode } from 'react'
-import { AudioWaveform, Clock, Cloud, Cpu, Droplet, Factory, Gauge, Leaf, Package, Plane, RadioTower, Satellite, Signal, Sun, Thermometer } from 'lucide-react'
+import { AudioWaveform, Clock, Cloud, Cpu, Droplet, Factory, Gauge, Leaf, Package, RadioTower, Rocket, Satellite, Signal, Sun, SunMedium, Thermometer } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { LayoutSwitch, Panel } from '../components/ui/primitives'
 import { Sparkline } from '../components/charts/TimeChart'
 import TelemetryMap from '../components/map/TelemetryMap'
-import { AttitudePlane } from '../components/attitude/Attitude'
+import { AttitudeRocket } from '../components/attitude/Attitude'
 import ConnectionMenu from '../components/layout/ConnectionMenu'
 import { useLatest, useLinkState, useNow, useView, TONE_TEXT } from '../hooks'
 import { clock12, dateLong, fixLabel, fmt, int, latStr, lonStr, signed, srcLabel, windowFrames } from '../lib/format'
@@ -20,6 +20,7 @@ const getCo2 = (f: Frame) => f.env.co2
 const getVoc = (f: Frame) => f.env.voc
 const getNox = (f: Frame) => f.env.nox
 const getLux = (f: Frame) => f.env.lux
+const getUvi = (f: Frame) => f.env.uvi
 
 export default function OverviewDashboard() {
   const f = useLatest()
@@ -88,9 +89,9 @@ export default function OverviewDashboard() {
         </Panel>
 
         <Panel className="flex flex-col p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-100"><Plane className="size-4 text-sky-400" />Attitude <span className="font-normal text-slate-400">(BNO055)</span></div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-100"><Rocket className="size-4 text-sky-400" />Attitude <span className="font-normal text-slate-400">(BNO055)</span></div>
           <div className="relative min-h-[230px] flex-1">
-            <AttitudePlane attitude={f ? f.imu : null} className="absolute inset-0" />
+            <AttitudeRocket attitude={f ? f.imu : null} className="absolute inset-0" />
             <Reading label="Roll" value={f?.imu.roll} className="top-6 left-2 text-lime-400" />
             <Reading label="Pitch" value={f?.imu.pitch} className="top-6 right-2 text-right text-sky-400" />
             <Reading label="Yaw" value={f?.imu.yaw} className="bottom-4 left-2 text-amber-400" />
@@ -102,7 +103,7 @@ export default function OverviewDashboard() {
         </Panel>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 2xl:grid-cols-7">
+      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 2xl:grid-cols-8">
         <SparkCard icon={Thermometer} iconClass="text-red-400" title="Temperature" value={fmt(f?.env.t)} unit="°C" color="#f87171" frames={recent} get={getT} src={srcLabel(f?.env.tSrc)} />
         <SparkCard icon={Droplet} iconClass="text-sky-400" title="Humidity" value={fmt(f?.env.h)} unit="%" color="#60a5fa" frames={recent} get={getH} src={srcLabel(f?.env.hSrc)} />
         <SparkCard icon={Gauge} iconClass="text-yellow-400" title="Pressure" value={fmt(f?.env.p)} unit="hPa" color="#facc15" frames={recent} get={getP} src={srcLabel(f?.env.pSrc)} />
@@ -110,6 +111,7 @@ export default function OverviewDashboard() {
         <SparkCard icon={Leaf} iconClass="text-violet-400" title="VOC Index" value={int(f?.env.voc)} color="#c084fc" frames={recent} get={getVoc} src="SGP41" />
         <SparkCard icon={Factory} iconClass="text-orange-400" title="NOx Index" value={int(f?.env.nox)} color="#fb923c" frames={recent} get={getNox} src="SGP41" />
         <SparkCard icon={Sun} iconClass="text-yellow-400" title="Light" value={int(f?.env.lux)} unit="lux" extra={`IR: ${int(f?.env.ir)}`} color="#facc15" frames={recent} get={getLux} src="TSL25911FN" />
+        <SparkCard icon={SunMedium} iconClass="text-amber-400" title="UV Index" value={fmt(f?.env.uvi, 2)} color="#fbbf24" frames={recent} get={getUvi} src="LTR-390" />
       </div>
 
       <Panel className="mt-4 grid grid-cols-1 divide-white/10 px-2 py-3 sm:grid-cols-3 sm:divide-x">

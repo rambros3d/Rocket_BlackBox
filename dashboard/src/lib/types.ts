@@ -34,6 +34,7 @@ export interface Frame {
     nox: number
     lux: number
     ir: number
+    uvi: number
   }
   imu: {
     roll: number
@@ -48,7 +49,12 @@ export interface Frame {
     cal: [number, number, number, number]
   }
   sys: { bat: number; batPct: number; mcuT: number }
-  link: { rssi: number | null; snr: number | null }
+  link: {
+    rssi: number | null
+    snr: number | null
+    uplinkRssi?: number | null
+    uplinkSnr?: number | null
+  }
 }
 
 export interface TrackPoint {

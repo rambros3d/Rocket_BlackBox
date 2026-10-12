@@ -74,6 +74,7 @@ class LinkController {
   private autoConnectTimer: ReturnType<typeof setInterval> | null = null
   private autoConnectListenerAttached = false
   private lastAutoConnectError = 0
+  private pingTimer: ReturnType<typeof setInterval> | null = null
   busy = false
 
   get isDemo() {
@@ -169,6 +170,9 @@ class LinkController {
         await sleep(350)
         await this.write('i\n')
       }
+      if (mode === 'lora') {
+        this.startPingLoop()
+      }
     } catch (error) {
       if (!this.port?.readable) {
         await this.disconnect(false)
@@ -183,6 +187,7 @@ class LinkController {
     this.disconnecting = true
 
     try {
+      this.stopPingLoop()
       this.keepReading = false
       this.busy = false
       this.writeChain = Promise.resolve()
@@ -356,6 +361,33 @@ class LinkController {
     }
   }
 
+  private startPingLoop() {
+    this.stopPingLoop()
+    this.pingTimer = setInterval(() => {
+      void this.sendPingUplink()
+    }, 5000)
+  }
+
+  private stopPingLoop() {
+    if (this.pingTimer) {
+      clearInterval(this.pingTimer)
+      this.pingTimer = null
+    }
+  }
+
+  private async sendPingUplink() {
+    if (this.mode !== 'lora' || !this.port || this.busy) return
+    const currentCmd = useTelemetry.getState().command
+    if (currentCmd?.status === 'pending') return
+    const packet = encodeCommand(Command.PING)
+    try {
+      await this.write(encodeKiss(KISS_DATA, packet))
+      useTelemetry.getState().noteCommandSent()
+    } catch {
+      // Ignore ping failure silently
+    }
+  }
+
   private async runReadLoop(port: SerialPort) {
     while (this.keepReading && port.readable) {
       this.reader = port.readable.getReader()
@@ -385,17 +417,33 @@ class LinkController {
           this.loraParser.reset()
           const events = this.loraParser.push(packet.body, now)
           const hasBinaryFrame = events.some((ev) => ev.kind === 'frame' || ev.kind === 'ack')
+          if (hasBinaryFrame) {
+            // Asynchronously query ground dongle instantaneous SX1262 signal strength
+            void this.write(encodeKiss(KISS_HARDWARE, Uint8Array.of(0x0d)))
+          }
           for (const ev of events) {
             if (ev.kind === 'frame') t.ingest(ev.frame)
             else if (ev.kind === 'text' && !hasBinaryFrame) t.log('rx', ev.text)
             else if (ev.kind === 'ack') {
               t.noteAck(ev.cmd, ev.status)
-              t.log('rx', `ACK ${COMMAND_LABEL[ev.cmd] ?? `0x${ev.cmd.toString(16)}`} from ${ev.dev}: ${ev.status === 0 ? 'OK' : 'rejected'}`)
+              if (ev.rssi !== undefined && ev.snr !== undefined) {
+                t.applyUplinkMetrics(ev.rssi, ev.snr)
+              }
+              t.log(
+                'rx',
+                `ACK ${COMMAND_LABEL[ev.cmd] ?? `0x${ev.cmd.toString(16)}`} from ${ev.dev}: ${ev.status === 0 ? 'OK' : 'rejected'}${ev.rssi !== undefined ? ` (Uplink: ${ev.rssi} dBm, SNR ${ev.snr} dB)` : ''}`,
+              )
             }
           }
         } else if (packet.command === KISS_HARDWARE) {
           const body = packet.body
-          if (body[0] === 0xf9 && body.length >= 3) {
+          if (body[0] === 0x8d && body.length >= 2) {
+            const rssi = (body[1] << 24) >> 24
+            if (rssi < 0) {
+              const snr = Number((rssi - (-108)).toFixed(1))
+              t.applyLinkMetrics(rssi, snr)
+            }
+          } else if (body[0] === 0xf9 && body.length >= 3) {
             const rssi = (body[2] << 24) >> 24
             const snr = ((body[1] << 24) >> 24) / 4
             // Current dongle firmware can report invalid positive RSSI.

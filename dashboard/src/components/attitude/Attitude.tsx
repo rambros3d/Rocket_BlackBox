@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 interface Attitude {
   roll: number
@@ -216,4 +217,89 @@ export function AttitudeCube({ attitude, className }: { attitude: Attitude | nul
 export function AttitudePlane({ attitude, className }: { attitude: Attitude | null; className?: string }) {
   const ref = useAttitudeScene(attitude, buildPlane, [2.4, 2.3, 4.4])
   return <div ref={ref} className={className} aria-label="3D attitude model" role="img" />
+}
+
+const buildRocket: Builder = (scene) => {
+  scene.add(new THREE.AmbientLight(0xffffff, 1.2))
+  const key = new THREE.DirectionalLight(0xffffff, 2.5)
+  key.position.set(3, 5, 4)
+  scene.add(key)
+  const rim = new THREE.DirectionalLight(0x93c5fd, 1.5)
+  rim.position.set(-4, 2, -3)
+  scene.add(rim)
+  const fill = new THREE.DirectionalLight(0xffffff, 1.0)
+  fill.position.set(0, -3, 2)
+  scene.add(fill)
+
+  const rocketGroup = new THREE.Group()
+
+  // Procedural fallback while loading or in case asset fetch fails
+  const fallback = new THREE.Group()
+  const cylGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.2, 16)
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true })
+  const fallbackCyl = new THREE.Mesh(cylGeo, wireMat)
+  fallbackCyl.rotation.x = Math.PI / 2
+  fallback.add(fallbackCyl)
+  const coneGeo = new THREE.ConeGeometry(0.08, 0.4, 16)
+  const fallbackNose = new THREE.Mesh(coneGeo, wireMat)
+  fallbackNose.rotation.x = -Math.PI / 2
+  fallbackNose.position.z = 0.8
+  fallback.add(fallbackNose)
+  rocketGroup.add(fallback)
+
+  const loader = new GLTFLoader()
+  loader.load(
+    '/models/rocket/scene.gltf',
+    (gltf) => {
+      rocketGroup.remove(fallback)
+      fallback.traverse((o) => {
+        const m = o as THREE.Mesh
+        m.geometry?.dispose()
+        const mat = m.material as THREE.Material | undefined
+        mat?.dispose()
+      })
+
+      const model = gltf.scene
+      model.scale.setScalar(0.8)
+      model.rotation.z = -Math.PI / 4
+      rocketGroup.add(model)
+    },
+    undefined,
+    (err) => {
+      console.warn('Unable to load rocket glTF model, keeping procedural fallback:', err)
+    }
+  )
+
+  scene.add(rocketGroup)
+
+  // Gimbal rings (Roll = Green, Pitch = Blue, Yaw = Orange)
+  const ring = (color: number, rotate: (m: THREE.Mesh) => void, radius = 1.62) => {
+    const m = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.012, 12, 160), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95 }))
+    rotate(m)
+    scene.add(m)
+    return m
+  }
+  ring(0x84cc16, () => undefined)
+  ring(0x3b82f6, (m) => (m.rotation.y = Math.PI / 2))
+  ring(0xf59e0b, (m) => (m.rotation.x = Math.PI / 2), 1.72)
+
+  const marker = (color: number, pos: [number, number, number]) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 16), new THREE.MeshBasicMaterial({ color }))
+    m.scale.set(1, 1.8, 1)
+    m.position.set(...pos)
+    scene.add(m)
+  }
+  marker(0x84cc16, [0, 1.62, 0])
+  marker(0x84cc16, [-1.62, 0, 0])
+  marker(0x3b82f6, [0, 0, 1.62])
+  marker(0x3b82f6, [0, 0, -1.62])
+  marker(0xf59e0b, [0, 0, 1.72])
+  marker(0xf59e0b, [1.72, 0, 0])
+
+  return rocketGroup
+}
+
+export function AttitudeRocket({ attitude, className }: { attitude: Attitude | null; className?: string }) {
+  const ref = useAttitudeScene(attitude, buildRocket, [2.5, 2.2, 4.2])
+  return <div ref={ref} className={className} aria-label="3D rocket attitude model" role="img" />
 }

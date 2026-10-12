@@ -134,6 +134,10 @@ void TelemetryCollector::collect(TelemetryFrame& f) {
         f.lux = env.ltr390Lux;
     }
 
+    if (env.ltr390Detected) {
+        f.uvi = env.ltr390Uvi;
+    }
+
     if (imuOk) {
         f.rollDeg = imu.rollDeg;
         f.pitchDeg = imu.pitchDeg;

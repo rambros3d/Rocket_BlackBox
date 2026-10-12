@@ -31,6 +31,7 @@ const CHARTS: ChartDef[] = [
     { name: 'NOx', color: '#4ade80', get: (f) => f.env.nox },
   ] },
   { title: 'Light Intensity', sub: 'TSL25911', unit: 'lux', digits: 0, series: [{ name: 'Lux', color: '#eab308', get: (f) => f.env.lux }] },
+  { title: 'UV Index', sub: 'LTR-390', unit: '', digits: 2, series: [{ name: 'UV Index', color: '#fbbf24', get: (f: Frame) => f.env.uvi }] },
   { title: 'Acceleration', unit: 'm/s²', fill: false, digits: 2, series: [
     { name: 'X', color: '#ef4444', get: (f) => f.imu.ax },
     { name: 'Y', color: '#22c55e', get: (f) => f.imu.ay },

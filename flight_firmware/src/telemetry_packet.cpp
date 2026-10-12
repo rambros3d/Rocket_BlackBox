@@ -1,7 +1,7 @@
 #include "telemetry_packet.h"
 #include <math.h>
 
-static_assert(sizeof(TelemetryPacket) == 88, "TelemetryPacket layout changed; update dashboard/src/lib/protocol.ts");
+static_assert(sizeof(TelemetryPacket) == 90, "TelemetryPacket layout changed; update dashboard/src/lib/protocol.ts");
 
 namespace {
 
@@ -87,6 +87,7 @@ size_t encode(const TelemetryFrame& f, TelemetryPacket& p) {
     p.batteryMv = clampTo<uint16_t>(f.batteryV * 1000.0, 0, 65535);
     p.batteryPct = f.batteryPct;
     p.mcuTempC = f.mcuTempC;
+    p.uviX100 = clampTo<uint16_t>(f.uvi * 100.0, 0, 65535);
 
     p.crc = crc16(reinterpret_cast<const uint8_t*>(&p), offsetof(TelemetryPacket, crc));
     return sizeof(p);
@@ -150,6 +151,7 @@ bool decode(const uint8_t* data, size_t len, TelemetryFrame& f) {
     f.batteryV = p.batteryMv / 1000.0f;
     f.batteryPct = p.batteryPct;
     f.mcuTempC = p.mcuTempC;
+    f.uvi = p.uviX100 / 100.0f;
     return true;
 }
 
@@ -165,13 +167,15 @@ bool findCommand(const uint8_t* data, size_t len, CommandPacket& out) {
     return false;
 }
 
-size_t encodeAck(uint8_t cmd, uint8_t status, uint16_t deviceId, AckPacket& p) {
+size_t encodeAck(uint8_t cmd, uint8_t status, uint16_t deviceId, AckPacket& p, float rssi, float snr) {
     p.magic[0] = TELEMETRY_MAGIC_0;
     p.magic[1] = 'A';
     p.version = TELEMETRY_PROTOCOL_VERSION;
     p.cmd = cmd;
     p.status = status;
     p.deviceId = deviceId;
+    p.rssiX10 = clampTo<int16_t>(rssi * 10.0, -32768, 32767);
+    p.snrX10 = clampTo<int16_t>(snr * 10.0, -32768, 32767);
     p.crc = crc16(reinterpret_cast<const uint8_t*>(&p), offsetof(AckPacket, crc));
     return sizeof(p);
 }
@@ -221,7 +225,9 @@ void writeJson(Print& out, const TelemetryFrame& f) {
                sourceName(f.tempSrc), sourceName(f.humSrc), sourceName(f.presSrc),
                f.co2Ppm, f.vocIndex, f.noxIndex);
     num(out, f.lux, 1);
-    out.printf(",\"ir\":%u},", f.irRaw);
+    out.printf(",\"ir\":%u,\"uv\":", f.irRaw);
+    num(out, f.uvi, 2);
+    out.print("},");
 
     out.print("\"imu\":{\"roll\":"); num(out, f.rollDeg, 1);
     out.print(",\"pitch\":");        num(out, f.pitchDeg, 1);

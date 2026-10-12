@@ -81,7 +81,7 @@ static void handleUplink() {
     }
     Serial.printf("# Uplink command 0x%02X (rssi %.1f dBm, snr %.1f dB) -> %s\n",
                   cmd.cmd, rssi, snr, status == 0 ? "OK" : "UNKNOWN");
-    Telemetry::encodeAck(cmd.cmd, status, TelemetryCollector::deviceId(), s_ack);
+    Telemetry::encodeAck(cmd.cmd, status, TelemetryCollector::deviceId(), s_ack, rssi, snr);
     s_ackPending = true;
 }
 

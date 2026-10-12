@@ -62,6 +62,7 @@ export function makeDemoFrame(t: number, seq: number, startedAt: number): Frame 
   const hum = 54.2 + 3.5 * Math.sin(s / 420 + 1) + jitter(0.3)
   const pres = 1009.6 + 0.6 * Math.sin(s / 600) + jitter(0.05)
   const lux = Math.max(0, 2560 + 900 * Math.sin(s / 260) + 300 * Math.sin(s / 31) + jitter(120))
+  const uvi = +(Math.max(0, 5.2 + 2.8 * Math.sin(s / 260) + jitter(0.2))).toFixed(2)
   const hdg = bearing(prev, pos)
 
   return {
@@ -91,6 +92,7 @@ export function makeDemoFrame(t: number, seq: number, startedAt: number): Frame 
       nox: Math.round(42 + 8 * Math.sin(s / 260 + 2) + jitter(2)),
       lux,
       ir: Math.round(lux * 0.4),
+      uvi,
     },
     imu: {
       roll: -2.6 + 3 * Math.sin(s / 7) + jitter(0.3),
@@ -105,7 +107,12 @@ export function makeDemoFrame(t: number, seq: number, startedAt: number): Frame 
       cal: [3, 3, 3, 3],
     },
     sys: { bat: 3.92 - (t - startedAt) / 3.6e8, batPct: 84, mcuT: 41 },
-    link: { rssi: Math.round(-78 + 4 * Math.sin(s / 40) + jitter(1.5)), snr: +(9.5 + Math.sin(s / 33) + jitter(0.4)).toFixed(1) },
+    link: {
+      rssi: Math.round(-78 + 4 * Math.sin(s / 40) + jitter(1.5)),
+      snr: +(9.5 + Math.sin(s / 33) + jitter(0.4)).toFixed(1),
+      uplinkRssi: Math.round(-81 + 3 * Math.sin(s / 45) + jitter(1.2)),
+      uplinkSnr: +(8.8 + Math.sin(s / 35) + jitter(0.5)).toFixed(1),
+    },
   }
 }
 

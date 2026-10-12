@@ -334,6 +334,10 @@ void EnvSensorsManager::runAllDiagnostics(Print& out) {
         uint32_t uvs = ltr.readUVS();
         float calcLux = 0.6f * (float)als / 3.0f;
         float calcUvi = (float)uvs / 383.33f;
+        s_diagResults.ltr390RawAls = als;
+        s_diagResults.ltr390RawUvs = uvs;
+        s_diagResults.ltr390Lux = calcLux;
+        s_diagResults.ltr390Uvi = calcUvi;
         out.printf("PASS (Part ID: 0x%02X)\n", s_diagResults.ltr390PartId);
         out.printf("    ALS Count: %u | UVS Count: %u | Calc Lux: %.1f | UVI: %.2f\n",
                    als, uvs, calcLux, calcUvi);
@@ -408,6 +412,11 @@ void EnvSensorsManager::readAllSensors(EnvDiagnosticResults& res) {
     if (s_diagResults.ltr390Detected && sensorAcknowledges(0x53)) {
         res.ltr390RawAls = ltr.readALS();
         res.ltr390Lux = 0.6f * (float)res.ltr390RawAls / 3.0f;
+        ltr.setMode(LTR390_MODE_UVS);
+        delay(25);
+        res.ltr390RawUvs = ltr.readUVS();
+        res.ltr390Uvi = (float)res.ltr390RawUvs / 383.33f;
+        ltr.setMode(LTR390_MODE_ALS);
         res.ltr390Detected = true; // Zero is a valid reading in darkness.
     }
     if (s_diagResults.tsl2591Detected && sensorAcknowledges(0x29)) {

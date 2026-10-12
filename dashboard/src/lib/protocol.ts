@@ -6,8 +6,8 @@ export const MAGIC_B = 0x42 // 'B' telemetry frame
 export const MAGIC_A = 0x41 // 'A' command acknowledgement
 export const MAGIC_C = 0x43 // 'C' uplink command
 export const PROTOCOL_VERSION = 1
-export const FRAME_SIZE = 88
-export const ACK_SIZE = 9
+export const FRAME_SIZE = 90
+export const ACK_SIZE = 13
 
 export const Command = {
   PING: 0x01,
@@ -46,7 +46,7 @@ export function decodeFrame(buf: Uint8Array, off: number, t = Date.now()): Frame
   if (off + FRAME_SIZE > buf.length) return null
   if (buf[off] !== MAGIC_R || buf[off + 1] !== MAGIC_B || buf[off + 2] !== PROTOCOL_VERSION) return null
   const dv = new DataView(buf.buffer, buf.byteOffset + off, FRAME_SIZE)
-  if (crc16(buf, off, off + FRAME_SIZE - 2) !== dv.getUint16(86, true)) return null
+  if (crc16(buf, off, off + FRAME_SIZE - 2) !== dv.getUint16(88, true)) return null
 
   const flags = dv.getUint16(11, true)
   const sources = dv.getUint8(50)
@@ -86,6 +86,7 @@ export function decodeFrame(buf: Uint8Array, off: number, t = Date.now()): Frame
       nox: dv.getUint16(55, true),
       lux: dv.getFloat32(57, true),
       ir: dv.getUint16(61, true),
+      uvi: dv.getUint16(86, true) / 100,
     },
     imu: {
       roll: dv.getInt16(63, true) / 10,
@@ -122,7 +123,7 @@ export function encodeCommand(cmd: number, arg = 0): Uint8Array {
 
 export type StreamEvent =
   | { kind: 'frame'; frame: Frame }
-  | { kind: 'ack'; cmd: number; status: number; dev: string }
+  | { kind: 'ack'; cmd: number; status: number; dev: string; rssi?: number; snr?: number }
   | { kind: 'rssi'; rssi: number }
   | { kind: 'text'; text: string }
 
@@ -156,24 +157,48 @@ export class LoRaStreamParser {
 
       if (b[i] === MAGIC_R && i + 1 < b.length && (b[i + 1] === MAGIC_B || b[i + 1] === MAGIC_A)) {
         const isFrame = b[i + 1] === MAGIC_B
-        const size = isFrame ? FRAME_SIZE : ACK_SIZE
         if (i + 2 < b.length && b[i + 2] === PROTOCOL_VERSION) {
-          if (i + size > b.length) break // wait for the rest of the packet
           if (isFrame) {
+            if (i + FRAME_SIZE > b.length) break // wait for the rest of the packet
             const frame = decodeFrame(b, i, now)
             if (frame) {
               this.flushText(events)
               events.push({ kind: 'frame', frame })
-              i += size
+              i += FRAME_SIZE
               this.expectRssi = this.rssiByteEnabled
               continue
             }
-          } else if (crc16(b, i, i + ACK_SIZE - 2) === (b[i + 7] | (b[i + 8] << 8))) {
-            this.flushText(events)
-            events.push({ kind: 'ack', cmd: b[i + 3], status: b[i + 4], dev: formatDeviceId(b[i + 5] | (b[i + 6] << 8)) })
-            i += size
-            this.expectRssi = this.rssiByteEnabled
-            continue
+          } else {
+            // Check 13-byte ACK with uplink RSSI/SNR
+            if (i + 13 <= b.length && crc16(b, i, i + 11) === (b[i + 11] | (b[i + 12] << 8))) {
+              this.flushText(events)
+              const dv = new DataView(b.buffer, b.byteOffset + i, 13)
+              events.push({
+                kind: 'ack',
+                cmd: b[i + 3],
+                status: b[i + 4],
+                dev: formatDeviceId(b[i + 5] | (b[i + 6] << 8)),
+                rssi: dv.getInt16(7, true) / 10,
+                snr: dv.getInt16(9, true) / 10,
+              })
+              i += 13
+              this.expectRssi = this.rssiByteEnabled
+              continue
+            } else if (i + 9 <= b.length && crc16(b, i, i + 7) === (b[i + 7] | (b[i + 8] << 8))) {
+              // Legacy 9-byte ACK fallback
+              this.flushText(events)
+              events.push({
+                kind: 'ack',
+                cmd: b[i + 3],
+                status: b[i + 4],
+                dev: formatDeviceId(b[i + 5] | (b[i + 6] << 8)),
+              })
+              i += 9
+              this.expectRssi = this.rssiByteEnabled
+              continue
+            } else if (i + 13 > b.length) {
+              break // wait for the rest of the ACK
+            }
           }
         } else if (i + 2 >= b.length) {
           break
@@ -267,7 +292,7 @@ export function fromJson(o: Json, t = Date.now()): Frame {
     baro: { alt: n(b.alt), vs: n(b.vs), p: n(b.p) },
     env: {
       t: n(e.t), h: n(e.h), p: n(e.p), tSrc: src(e.t_src), hSrc: src(e.h_src), pSrc: src(e.p_src),
-      co2: n(e.co2), voc: n(e.voc), nox: n(e.nox), lux: n(e.lux), ir: n(e.ir),
+      co2: n(e.co2), voc: n(e.voc), nox: n(e.nox), lux: n(e.lux), ir: n(e.ir), uvi: n(e.uv),
     },
     imu: {
       roll: n(m.roll), pitch: n(m.pitch), yaw: n(m.yaw), ax: n(m.ax), ay: n(m.ay), az: n(m.az),

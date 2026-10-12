@@ -1,13 +1,13 @@
 import clsx from 'clsx'
-import { Clock, Cloud, Cpu, Droplet, Factory, Gauge, Leaf, MapPin, Mountain, RadioTower, RefreshCw, Sun, Thermometer } from 'lucide-react'
+import { Clock, Cloud, Cpu, Droplet, Factory, Gauge, Leaf, MapPin, Mountain, RadioTower, RefreshCw, Sun, SunMedium, Thermometer } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { LayoutSwitch, PageHeader, Panel, PanelTitle } from '../components/ui/primitives'
 import { TintCard } from '../components/ui/TintCard'
 import TelemetryMap from '../components/map/TelemetryMap'
-import { AttitudeCube } from '../components/attitude/Attitude'
+import { AttitudeRocket } from '../components/attitude/Attitude'
 import { useLatest, useLinkState, useView, TONE_TEXT } from '../hooks'
 import { fixLabel, fmt, gpsLocalTime, int, latStr, lonStr, signed, srcLabel } from '../lib/format'
-import { co2Status, humStatus, lightStatus, LEVEL_TEXT, noxStatus, pressureStatus, tempComfort, tempRange, vocStatus, type Status } from '../lib/status'
+import { co2Status, humStatus, lightStatus, LEVEL_TEXT, noxStatus, pressureStatus, tempComfort, tempRange, uviStatus, vocStatus, type Status } from '../lib/status'
 import { sensorsActive } from '../lib/derive'
 import { useSettings } from '../store/settings'
 import { useTelemetry } from '../store/telemetry'
@@ -61,7 +61,7 @@ export default function SnapshotDashboard() {
 
         <Panel className="flex flex-col p-4">
           <PanelTitle>Orientation <span className="text-sm font-normal text-slate-400">(BNO055)</span></PanelTitle>
-          <AttitudeCube attitude={f ? f.imu : null} className="mt-1 h-[230px] w-full flex-1" />
+          <AttitudeRocket attitude={f ? f.imu : null} className="mt-1 h-[230px] w-full flex-1" />
           <div className="mt-2 grid grid-cols-3 divide-x divide-white/10 rounded-lg border border-white/10 bg-ink-900/50 py-2.5 text-center">
             <Angle label="Roll" value={f?.imu.roll} className="text-red-400" />
             <Angle label="Pitch" value={f?.imu.pitch} className="text-emerald-400" />
@@ -72,7 +72,7 @@ export default function SnapshotDashboard() {
 
       <Panel className="mt-4 p-4">
         <PanelTitle>Environmental Snapshot</PanelTitle>
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
           <SnapCard icon={Gauge} iconClass="text-teal-300" title="Pressure" src={srcLabel(f?.env.pSrc)} value={fmt(f?.env.p)} unit="hPa" status={pressureStatus(f?.env.p)} />
           <SnapCard icon={Cloud} iconClass="text-sky-400" title="CO₂" src="SCD40" value={int(f?.env.co2)} unit="ppm" status={co2Status(f?.env.co2)} />
           <SnapCard icon={Leaf} iconClass="text-lime-400" title="VOC Index" src="SGP41" value={int(f?.env.voc)} status={vocStatus(f?.env.voc)} />
@@ -80,6 +80,7 @@ export default function SnapshotDashboard() {
           <SnapCard icon={Thermometer} iconClass="text-orange-400" title="Temperature" src={srcLabel(f?.env.tSrc)} value={fmt(f?.env.t)} unit="°C" status={tempRange(f?.env.t)} />
           <SnapCard icon={Droplet} iconClass="text-teal-300" title="Humidity" src={srcLabel(f?.env.hSrc)} value={fmt(f?.env.h)} unit="%" status={humStatus(f?.env.h)} />
           <SnapCard icon={Sun} iconClass="text-yellow-400" title="Light" src="TSL25911" value={int(f?.env.lux)} unit="lux" status={lightStatus(f?.env.lux)} />
+          <SnapCard icon={SunMedium} iconClass="text-amber-400" title="UV Index" src="LTR-390" value={fmt(f?.env.uvi, 2)} status={uviStatus(f?.env.uvi)} />
         </div>
         <div className="mt-3 flex items-center justify-end gap-2 text-xs text-slate-400">
           {autoRefresh ? (f?.source === 'lora' ? 'Dashboard updates with each LoRa packet' : `Dashboard will auto-refresh every ${refreshSec} second${refreshSec === 1 ? '' : 's'}`) : 'Auto-refresh paused'}

@@ -61,6 +61,7 @@ struct TelemetryFrame {
     uint16_t noxIndex;
     float lux;
     uint16_t irRaw;
+    float uvi;
 
     float rollDeg, pitchDeg, yawDeg;
     float accX, accY, accZ;  // raw accelerometer incl. gravity, m/s^2
@@ -113,6 +114,7 @@ struct __attribute__((packed)) TelemetryPacket {
     uint16_t batteryMv;
     uint8_t batteryPct;
     int8_t mcuTempC;
+    uint16_t uviX100;
 
     uint16_t crc;
 };
@@ -138,6 +140,8 @@ struct __attribute__((packed)) AckPacket {
     uint8_t cmd;
     uint8_t status;          // 0 = OK
     uint16_t deviceId;
+    int16_t rssiX10;
+    int16_t snrX10;
     uint16_t crc;
 };
 
@@ -148,7 +152,7 @@ namespace Telemetry {
 
     // Scans a received buffer (which may carry DTU header bytes) for a valid command.
     bool findCommand(const uint8_t* data, size_t len, CommandPacket& out);
-    size_t encodeAck(uint8_t cmd, uint8_t status, uint16_t deviceId, AckPacket& out);
+    size_t encodeAck(uint8_t cmd, uint8_t status, uint16_t deviceId, AckPacket& out, float rssi = 0.0f, float snr = 0.0f);
 
     const char* sourceName(uint8_t src);
     void formatDeviceId(uint16_t id, char* buf, size_t len);
