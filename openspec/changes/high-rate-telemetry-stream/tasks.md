@@ -17,4 +17,4 @@
 
 - [x] 3.1 Run PlatformIO build in `flight_firmware/` and verify compilation.
 - [x] 3.2 Run TypeScript check and build in `dashboard/` (`npm run typecheck && npm run build`).
-- [ ] 3.3 Validate OpenSpec change compliance (`openspec validate high-rate-telemetry-stream`).
+- [x] 3.3 Validate OpenSpec change compliance (`openspec validate high-rate-telemetry-stream --strict --no-interactive`).
