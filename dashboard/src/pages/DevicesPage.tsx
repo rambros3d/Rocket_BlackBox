@@ -15,7 +15,6 @@ import { useTelemetry } from '../store/telemetry'
 
 const SUBSYSTEMS = [
   { flag: FLAG.MS5607, name: 'Flight altimeter', part: 'MS5607-02BA03', bus: 'I2C1 · 0x77', fn: 'Pressure, barometric altitude' },
-  { flag: FLAG.BME680, name: 'Environmental', part: 'Bosch BME680', bus: 'I2C1 · 0x76', fn: 'Temperature, humidity, pressure' },
   { flag: FLAG.SCD40, name: 'CO₂ sensor', part: 'Sensirion SCD40', bus: 'I2C1 · 0x62', fn: 'NDIR CO₂, temperature, RH' },
   { flag: FLAG.SGP41, name: 'Gas sensor', part: 'Sensirion SGP41', bus: 'I2C1 · 0x59', fn: 'VOC / NOx index' },
   { flag: FLAG.TSL2591, name: 'Light sensor', part: 'TSL25911FN', bus: 'I2C1 · 0x29', fn: 'Lux, IR channel' },
@@ -178,6 +177,8 @@ export default function DevicesPage() {
             <KV label="Packets received">{int(stats.packets)}</KV>
             <KV label="Sequence gaps">{int(stats.lost)}{stats.packets ? ` (${((stats.lost / (stats.packets + stats.lost)) * 100).toFixed(1)} %)` : ''}</KV>
             <KV label="Data rate">{stats.rateHz ? `${stats.rateHz.toFixed(2)} Hz` : '--'}</KV>
+            <KV label="RSSI">{latest?.link.rssi !== null && latest?.link.rssi !== undefined ? `${latest.link.rssi} dBm` : '--'}</KV>
+            <KV label="SNR">{latest?.link.snr !== null && latest?.link.snr !== undefined ? `${latest.link.snr > 0 ? '+' : ''}${latest.link.snr.toFixed(1)} dB` : '--'}</KV>
             <KV label="Commands / ACKs">{stats.commandsSent} / {stats.acks}</KV>
           </dl>
         </Panel>

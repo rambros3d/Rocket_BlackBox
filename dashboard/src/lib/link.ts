@@ -368,7 +368,7 @@ class LinkController {
       } catch (err) {
         if (this.keepReading) useTelemetry.getState().log('sys', `Read error: ${(err as Error).message}`)
       } finally {
-        this.reader.releaseLock()
+        this.reader?.releaseLock()
         this.reader = null
       }
     }

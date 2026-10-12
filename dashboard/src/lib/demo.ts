@@ -47,7 +47,7 @@ const jitter = (amp: number) => (Math.random() - 0.5) * 2 * amp
 const pad = (v: number) => String(v).padStart(2, '0')
 
 const FLAGS =
-  FLAG.MS5607 | FLAG.BME680 | FLAG.SCD40 | FLAG.SGP41 | FLAG.TSL2591 | FLAG.BNO055 |
+  FLAG.MS5607 | FLAG.SCD40 | FLAG.SGP41 | FLAG.TSL2591 | FLAG.BNO055 |
   FLAG.GPS_UART | FLAG.FLASH | FLAG.LOGGING | FLAG.PPS_LOCK | FLAG.GPS_TIME
 
 export function makeDemoFrame(t: number, seq: number, startedAt: number): Frame {
@@ -85,7 +85,7 @@ export function makeDemoFrame(t: number, seq: number, startedAt: number): Frame 
     },
     baro: { alt, vs: alt - altPrev, p: pres },
     env: {
-      t: temp, h: hum, p: pres, tSrc: 'BME680', hSrc: 'BME680', pSrc: 'BME680',
+      t: temp, h: hum, p: pres, tSrc: 'SCD40', hSrc: 'SCD40', pSrc: 'MS5607',
       co2: Math.round(612 + 70 * Math.sin(s / 350) + jitter(12)),
       voc: Math.round(86 + 18 * Math.sin(s / 200) + jitter(4)),
       nox: Math.round(42 + 8 * Math.sin(s / 260 + 2) + jitter(2)),

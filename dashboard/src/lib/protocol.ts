@@ -34,6 +34,7 @@ export function crc16(bytes: Uint8Array, start = 0, end = bytes.length): number 
   return crc
 }
 
+// Wire source indices: 0 = NONE, 1 = MS5607, 2 = BME680 (legacy/isolated), 3 = SCD40
 const SOURCES: SourceName[] = ['NONE', 'MS5607', 'BME680', 'SCD40']
 const pad = (n: number) => String(n).padStart(2, '0')
 

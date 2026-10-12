@@ -76,6 +76,7 @@ export interface Alert {
 /** Subsystem presence bits carried in Frame.flags (mirrors firmware TelemetryFlag) */
 export const FLAG = {
   MS5607: 1 << 0,
+  /** @deprecated Isolated on PCB Rev 1.0; roles assumed by MS5607 and SCD40 */
   BME680: 1 << 1,
   SCD40: 1 << 2,
   SGP41: 1 << 3,
