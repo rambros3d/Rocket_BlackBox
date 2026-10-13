@@ -74,7 +74,7 @@ class LinkController {
   private autoConnectTimer: ReturnType<typeof setInterval> | null = null
   private autoConnectListenerAttached = false
   private lastAutoConnectError = 0
-  private rssiPollTimer: ReturnType<typeof setInterval> | null = null
+  private lastDownlinkLink: { rssi: number; snr: number } | null = null
   private lastPingMs = 0
   private pingInFlight = false
   busy = false
@@ -172,9 +172,6 @@ class LinkController {
         await sleep(350)
         await this.write('i\n')
       }
-      if (mode === 'lora') {
-        this.startRssiPolling()
-      }
     } catch (error) {
       if (!this.port?.readable) {
         await this.disconnect(false)
@@ -187,7 +184,7 @@ class LinkController {
     if (manual) this.userDisconnected = true
     if (this.disconnecting) return
     this.disconnecting = true
-    this.stopRssiPolling()
+    this.lastDownlinkLink = null
     this.pingInFlight = false
 
     try {
@@ -395,6 +392,10 @@ class LinkController {
           const hasBinaryFrame = events.some((ev) => ev.kind === 'frame' || ev.kind === 'fast-frame' || ev.kind === 'ack')
           for (const ev of events) {
             if (ev.kind === 'frame') {
+              if (this.lastDownlinkLink && ev.frame.link.rssi === null) {
+                ev.frame.link.rssi = this.lastDownlinkLink.rssi
+                ev.frame.link.snr = this.lastDownlinkLink.snr
+              }
               t.ingest(ev.frame)
               this.maybeBackgroundPing(now)
             } else if (ev.kind === 'fast-frame') {
@@ -415,17 +416,13 @@ class LinkController {
           }
         } else if (packet.command === KISS_HARDWARE) {
           const body = packet.body
-          if (body[0] === 0x8d && body.length >= 2) {
-            const rssi = (body[1] << 24) >> 24
-            if (rssi < 0) t.applyRssi(rssi)
-          } else if (body[0] === 0xf9 && body.length >= 3) {
-            const rssi = (body[2] << 24) >> 24
+          if (body[0] === 0xf9 && body.length >= 3) {
+            // body[1] is signed SNR in quarter-dB; body[2] is signed RSSI in dBm
             const snr = ((body[1] << 24) >> 24) / 4
-            // Current dongle firmware can report invalid positive RSSI or 0.0 SNR.
-            if (rssi < 0 && snr !== 0) {
+            const rssi = (body[2] << 24) >> 24
+            if (rssi < 0) {
+              this.lastDownlinkLink = { rssi, snr }
               t.applyLinkMetrics(rssi, snr)
-            } else if (rssi < 0) {
-              t.applyRssi(rssi)
             }
           }
           const waiter = this.hardwareWaiter
@@ -587,22 +584,6 @@ class LinkController {
     }
     useTelemetry.getState().setCommand({ cmd, sentAt: Date.now(), attempts: 3, status: 'failed' })
     t.log('sys', `${label}: no acknowledgement from payload`)
-  }
-
-  private startRssiPolling() {
-    this.stopRssiPolling()
-    this.rssiPollTimer = setInterval(() => {
-      if (this.mode === 'lora' && this.port && !this.busy && !this.pingInFlight && !this.hardwareWaiter) {
-        this.write(encodeKiss(KISS_HARDWARE, Uint8Array.of(0x0d))).catch(() => undefined)
-      }
-    }, 1000)
-  }
-
-  private stopRssiPolling() {
-    if (this.rssiPollTimer) {
-      clearInterval(this.rssiPollTimer)
-      this.rssiPollTimer = null
-    }
   }
 
   private maybeBackgroundPing(now: number) {

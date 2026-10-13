@@ -27,6 +27,10 @@ bool IMUSensorManager::initIMU(Print& out) {
         delay(20);
     }
 
+    // Bus 2 pre-probe clearing: clock 9 pulses on SCL with a STOP condition to unhang any slave stuck mid-byte
+    I2CBusManager::restartBus(2);
+    delay(10);
+
     // The external IMU may be wired to the environmental bus. Try the
     // dedicated bus first. Bus 1 address 0x29 belongs to the TSL2591, so do
     // not probe it as a BNO055 candidate.
@@ -39,8 +43,18 @@ bool IMUSensorManager::initIMU(Print& out) {
     s_imuReadFailures = 0;
     s_imuZeroGravitySamples = 0;
     for (const Candidate& candidate : candidates) {
-        candidate.wire->beginTransmission(candidate.address);
-        if (candidate.wire->endTransmission() != 0) continue;
+        bool candidateAck = false;
+        // Up to 3 probe retries with a 50 ms delay
+        for (uint8_t attempt = 0; attempt < 3; ++attempt) {
+            candidate.wire->beginTransmission(candidate.address);
+            if (candidate.wire->endTransmission() == 0) {
+                candidateAck = true;
+                break;
+            }
+            delay(50);
+        }
+        if (!candidateAck) continue;
+
         candidate.wire->beginTransmission(candidate.address);
         candidate.wire->write(0x00);  // BNO055 CHIP_ID register
         if (candidate.wire->endTransmission(false) != 0 ||
@@ -70,8 +84,13 @@ bool IMUSensorManager::initIMU(Print& out) {
     _diagResults.detected = true;
     _diagResults.address = _activeAddr;
 
-    // Use external crystal if available on hardware
-    _bno.setExtCrystalUse(true);
+    // Use rock-solid internal oscillator and explicitly enforce NDOF mode with datasheet settling delays
+    _bno.setMode(OPERATION_MODE_CONFIG);
+    delay(25);
+    _bno.setExtCrystalUse(false);
+    delay(25);
+    _bno.setMode(OPERATION_MODE_NDOF);
+    delay(50);
 
     // Read revision info
     Adafruit_BNO055::adafruit_bno055_rev_info_t rev;
@@ -386,11 +405,11 @@ void IMUSensorManager::probeIMULines(Print& out) {
             }
         }
 
-        // Restore standard pins for Wire1
+        // Restore standard pins for Wire1 at 50 kHz
         Wire1.end();
         delay(10);
-        Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 100000);
-        Wire1.setTimeOut(50);
+        Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 50000);
+        Wire1.setTimeOut(100);
     }
     out.println("--------------------------------------------------");
 }
@@ -442,7 +461,15 @@ void IMUSensorManager::runDiagnostics(Print& out) {
 }
 
 bool IMUSensorManager::readLiveData(IMUDiagnosticResults& res) {
-    if (_activeBus == 0) return false;
+    if (_activeBus == 0) {
+        const uint32_t now = millis();
+        static uint32_t s_nextDiscoveryMs = 0;
+        if ((int32_t)(now - s_nextDiscoveryMs) >= 0) {
+            s_nextDiscoveryMs = now + 5000;
+            initIMU(Serial);
+        }
+        if (_activeBus == 0) return false;
+    }
 
     TwoWire& bus = _activeBus == 2 ? Wire1 : Wire;
     uint8_t chipId = 0;
@@ -477,8 +504,12 @@ bool IMUSensorManager::readLiveData(IMUDiagnosticResults& res) {
                 if (bus.endTransmission() == 0) delay(700);
             }
             if (readBnoRegister(bus, _activeAddr, 0x00, &chipId, 1) && chipId == 0xA0) {
+                _bno.setMode(OPERATION_MODE_CONFIG);
+                delay(25);
+                _bno.setExtCrystalUse(false);
+                delay(25);
                 _bno.setMode(OPERATION_MODE_NDOF);
-                _bno.setExtCrystalUse(true);
+                delay(50);
                 _initialized = true;
                 s_imuReadFailures = 0;
                 s_imuZeroGravitySamples = 0;
@@ -613,9 +644,9 @@ void IMUSensorManager::runEdgeCaseDiagnostics(Print& out) {
     Wire.begin(PIN_I2C1_SDA, PIN_I2C1_SCL, 100000);
     Wire.setTimeOut(50);
 
-    // Restore Wire1 to IMU Bus 2 (Pins 2, 1)
-    Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 100000);
-    Wire1.setTimeOut(50);
+    // Restore Wire1 to IMU Bus 2 (Pins 2, 1) at 50 kHz
+    Wire1.begin(PIN_I2C2_SDA, PIN_I2C2_SCL, 50000);
+    Wire1.setTimeOut(100);
     out.println("   - Default I2C bus controllers restored.");
 
     out.println("==================================================");

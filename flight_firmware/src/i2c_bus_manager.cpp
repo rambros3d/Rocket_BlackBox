@@ -36,8 +36,10 @@ void I2CBusManager::restartBus(uint8_t busIndex) {
         pinMode(sda, INPUT_PULLUP);
     }
 
-    bus.begin(sda, scl, 100000);
-    bus.setTimeOut(50);
+    uint32_t frequency = (busIndex == 2) ? 50000 : 100000;
+    uint16_t timeoutMs = (busIndex == 2) ? 100 : 50;
+    bus.begin(sda, scl, frequency);
+    bus.setTimeOut(timeoutMs);
 }
 
 bool I2CBusManager::isDevicePresent(TwoWire& bus, uint8_t address) {
