@@ -110,7 +110,7 @@ The payload's SX1262 transmits an 88-byte binary frame (`flight_firmware/src/tel
 
 On first bring-up, verify that the dashboard's **Devices** page shows received packets and the payload subsystem flags. The payload USB console's `[t]` command sends a text test packet; `[x]` runs a receive sniffer. Adjust `LORA_SYNC_WORD` / `LORA_AIR_PREFIX` only if the radio link does not match.
 
-v2 serial keys: `[i]` info JSON, `[s]` toggle USB JSON, `[l]` toggle flash log, `[t]` LoRa test packet, `[x]` LoRa sniffer. Uplink commands from the dashboard (`R C ver cmd arg crc`): ping, start logging, stop logging — each acknowledged with an `R A` packet.
+v2 serial keys: `[i]` info JSON, `[s]` toggle USB JSON, `[l]` toggle flash log, `[t]` LoRa test packet, `[x]` LoRa sniffer. Uplink commands from the dashboard (`R C ver cmd arg crc`): ping, start logging, stop logging - each acknowledged with an `R A` packet.
 
 ---
 

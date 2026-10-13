@@ -33,7 +33,7 @@ export const duration = (sec: number | undefined) => {
   return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`
 }
 
-export const srcLabel = (s: SourceName | undefined) => (s && s !== 'NONE' ? s : '—')
+export const srcLabel = (s: SourceName | undefined) => (s && s !== 'NONE' ? s : '-')
 
 /** Converts the payload's GPS UTC "HH:MM:SS" into a local 12-hour clock string */
 export function gpsLocalTime(utc: string | null | undefined): string {

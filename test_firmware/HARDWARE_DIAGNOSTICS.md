@@ -79,17 +79,17 @@ Main SDA (GPIO 10) ──┼──[ R17 : 0Ω ]──> U10: LTR-390    (Pin 6 SD
 
 ### 2.3 Culprit Ranking & Inspection Guide
 
-#### 1. Suspect #1: U8 — Sensirion SGP41 (DFN-6, 2.44 × 2.44 mm)
+#### 1. Suspect #1: U8 - Sensirion SGP41 (DFN-6, 2.44 × 2.44 mm)
 * **Risk Factor:** **CRITICAL**.
 * **Physical Pinout:** **Pin 2 is `VSS` (GND)** and **Pin 3 is `SDA`** (directly adjacent, 0.8 mm pitch). Center thermal pad `EP` (Pin 7) is also GND and borders Pin 3.
 * **Isolation Resistor:** **`R13` (0Ω)**.
 
-#### 2. Suspect #2: U5 — Bosch BME680 (LGA-8, 3.0 × 3.0 mm)
+#### 2. Suspect #2: U5 - Bosch BME680 (LGA-8, 3.0 × 3.0 mm)
 * **Risk Factor:** HIGH.
 * **Physical Pinout:** Pin 1 is GND, Pin 3 is SDI/SDA.
 * **Isolation Resistor:** **`R26` (0Ω)**.
 
-#### 3. Suspect #3: U7 — Sensirion SCD40 (QFN-20, 10.1 × 10.1 mm)
+#### 3. Suspect #3: U7 - Sensirion SCD40 (QFN-20, 10.1 × 10.1 mm)
 * **Risk Factor:** MEDIUM.
 * **Physical Pinout:** Pin 6 & 20 are GND, Pin 10 is SDA. Large center ground pad.
 * **Isolation Resistor:** **`R19` (0Ω)**.
@@ -309,4 +309,3 @@ The primary avionics image (`flight_firmware`, target `rocket_payload_telemetry`
 * **GNSS Fix:** 12 satellites tracked, HDOP 0.8, locked 3D position with synchronized 1PPS UTC clock.
 * **Autonomous Flash Storage:** CSV logging actively recording flight records to `/ffat/flight_0001.csv`.
 * **Ground Tooling Note:** Stock dongle firmware exhibits a known SPI packet-status read offset bug emitting `\xf9\x00\x00` (zero metadata), causing `rocket_telemetry.py` to display `link.rssi: null, link.snr: null`; genuine hardware register interrogation confirms +10.8 dB SNR and clean carrier reception.
-

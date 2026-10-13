@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Rocket BlackBox — LoRa Ground Station Telemetry Receiver
+Rocket BlackBox - LoRa Ground Station Telemetry Receiver
 ---------------------------------------------------------
 Interfaces with the Waveshare USB-to-LoRa-HF dongle (running meshcore-waveshare-usb-lora)
 over USB serial (/dev/ttyACM* or /dev/ttyUSB*) to receive real-time rocket telemetry packets.
@@ -112,7 +112,10 @@ class SlipDecoder:
 def autodetect_port():
     """Finds the CH343 USB-to-LoRa serial port."""
     for p in serial.tools.list_ports.comports():
-        if "1A86:55D3" in p.hwid.upper() or "USB SINGLE SERIAL" in p.description.upper():
+        if (
+            "1A86:55D3" in p.hwid.upper()
+            or "USB SINGLE SERIAL" in p.description.upper()
+        ):
             return p.device
     if os.path.exists("/dev/ttyACM0"):
         return "/dev/ttyACM0"
@@ -168,11 +171,19 @@ def main():
         description="Rocket BlackBox Ground Station Telemetry Receiver"
     )
     parser.add_argument("-p", "--port", help="Serial port (e.g. /dev/ttyACM0)")
-    parser.add_argument("-b", "--baud", type=int, default=115200, help="Baud rate (default: 115200)")
-    parser.add_argument("--freq", type=int, help="Radio frequency in Hz (e.g. 869618000 or 868000000)")
-    parser.add_argument("--bw", type=int, help="Bandwidth in Hz (e.g. 62500, 125000, 250000)")
+    parser.add_argument(
+        "-b", "--baud", type=int, default=115200, help="Baud rate (default: 115200)"
+    )
+    parser.add_argument(
+        "--freq", type=int, help="Radio frequency in Hz (e.g. 869618000 or 868000000)"
+    )
+    parser.add_argument(
+        "--bw", type=int, help="Bandwidth in Hz (e.g. 62500, 125000, 250000)"
+    )
     parser.add_argument("--sf", type=int, help="Spreading factor (5-12)")
-    parser.add_argument("--cr", type=int, help="Coding rate denominator (5, 6, 7, 8 for 4/5..4/8)")
+    parser.add_argument(
+        "--cr", type=int, help="Coding rate denominator (5, 6, 7, 8 for 4/5..4/8)"
+    )
     parser.add_argument("--log", help="Path to CSV file to log received packets")
     args = parser.parse_args()
 
@@ -198,12 +209,16 @@ def main():
             bw = args.bw or 62500
             sf = args.sf or 8
             cr = args.cr or 8
-            print(f"Tuning radio to {freq / 1e6:.3f} MHz, BW {bw / 1e3:.1f} kHz, SF{sf}, CR 4/{cr}...")
+            print(
+                f"Tuning radio to {freq / 1e6:.3f} MHz, BW {bw / 1e3:.1f} kHz, SF{sf}, CR 4/{cr}..."
+            )
             configure_radio(ser, freq, bw, sf, cr)
             time.sleep(0.1)
 
         # Enable signal reporting (0x19 0x01)
-        ser.write(encode_kiss_frame(CMD_SETHARDWARE, bytes((HW_CMD_SET_SIGNAL_REPORT, 0x01))))
+        ser.write(
+            encode_kiss_frame(CMD_SETHARDWARE, bytes((HW_CMD_SET_SIGNAL_REPORT, 0x01)))
+        )
         time.sleep(0.05)
 
         log_file = None
@@ -213,7 +228,16 @@ def main():
             log_file = open(args.log, "a", newline="", encoding="utf-8")
             csv_writer = csv.writer(log_file)
             if not file_exists:
-                csv_writer.writerow(["timestamp", "rssi_dbm", "snr_db", "length_bytes", "hex_payload", "ascii_text"])
+                csv_writer.writerow(
+                    [
+                        "timestamp",
+                        "rssi_dbm",
+                        "snr_db",
+                        "length_bytes",
+                        "hex_payload",
+                        "ascii_text",
+                    ]
+                )
             print(f"Logging telemetry packets to: {args.log}")
 
         print("\n" + "=" * 70)
@@ -241,19 +265,33 @@ def main():
                             snr_q, rssi = struct.unpack("<bb", sub_body[:2])
                             snr = snr_q / 4.0
                             packet_count += 1
-                            ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                            ts = datetime.datetime.now().strftime(
+                                "%Y-%m-%d %H:%M:%S.%f"
+                            )[:-3]
 
                             # ASCII printable preview
                             ascii_preview = "".join(
-                                chr(b) if 32 <= b <= 126 else "." for b in pending_packet
+                                chr(b) if 32 <= b <= 126 else "."
+                                for b in pending_packet
                             )
 
-                            print(f"[{ts}] PKT #{packet_count:<4} | RSSI: {rssi:>4} dBm | SNR: {snr:>5.1f} dB | {len(pending_packet):>3}B")
+                            print(
+                                f"[{ts}] PKT #{packet_count:<4} | RSSI: {rssi:>4} dBm | SNR: {snr:>5.1f} dB | {len(pending_packet):>3}B"
+                            )
                             print(f"  HEX: {pending_packet.hex()}")
                             print(f"  ASC: {ascii_preview}\n")
 
                             if csv_writer and log_file:
-                                csv_writer.writerow([ts, rssi, snr, len(pending_packet), pending_packet.hex(), ascii_preview])
+                                csv_writer.writerow(
+                                    [
+                                        ts,
+                                        rssi,
+                                        snr,
+                                        len(pending_packet),
+                                        pending_packet.hex(),
+                                        ascii_preview,
+                                    ]
+                                )
                                 log_file.flush()
 
                             pending_packet = None

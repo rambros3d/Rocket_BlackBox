@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Rocket BlackBox — Comprehensive LoRa RF Benchmark & Extensive Packet Loss Test
+Rocket BlackBox - Comprehensive LoRa RF Benchmark & Extensive Packet Loss Test
 --------------------------------------------------------------------------------
 This runner:
 1. Places the Rocket Payload in continuous packet sniffer mode ('l' -> '4') or beacon mode.
@@ -119,7 +119,7 @@ def run_benchmark():
     payload_port = "/dev/ttyACM1"
 
     print("=================================================================")
-    print("      ROCKET BLACKBOX — EXTENSIVE LORA RF BENCHMARK SUITE       ")
+    print("      ROCKET BLACKBOX - EXTENSIVE LORA RF BENCHMARK SUITE       ")
     print("=================================================================")
     print(f"Ground Station (Waveshare SX1262 Dongle) : {ground_port}")
     print(f"Rocket Payload (RAK3112 ESP32-S3)        : {payload_port}")

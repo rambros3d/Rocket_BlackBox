@@ -4,9 +4,10 @@
 Includes live auto-reload: automatically refreshes your browser tab when docs/ files change!
 """
 
-from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
 import os
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+
 import markdown
 
 PORT = 8088
@@ -18,7 +19,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Rocket BLACKBOX — Avionics & Flight Data Recorder</title>
+    <title>Rocket BLACKBOX - Avionics & Flight Data Recorder</title>
     <!-- GitHub Pages / Primer Light CSS (Locked to Light Mode) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
     <style>
@@ -70,7 +71,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   </head>
   <body>
     <div class="container-lg px-3 my-5 markdown-body">
-      <h1><a href="/" style="text-decoration:none; color:inherit;">Rocket BLACKBOX — Avionics &amp; Flight Data Recorder</a></h1>
+      <h1><a href="/" style="text-decoration:none; color:inherit;">Rocket BLACKBOX - Avionics &amp; Flight Data Recorder</a></h1>
       {content}
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js"></script>
@@ -99,12 +100,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
+
 def get_latest_mtime():
     """Returns the latest modification time of any file in DOCS_DIR."""
     latest = 0
     for root, _, files in os.walk(DOCS_DIR):
         for f in files:
-            if f.endswith(('.md', '.scss', '.css', '.html')):
+            if f.endswith((".md", ".scss", ".css", ".html")):
                 p = os.path.join(root, f)
                 try:
                     m = os.path.getmtime(p)
@@ -113,6 +115,7 @@ def get_latest_mtime():
                 except OSError:
                     pass
     return latest
+
 
 class DocsHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -134,7 +137,9 @@ class DocsHandler(SimpleHTTPRequestHandler):
             if os.path.exists(md_path):
                 with open(md_path, "r", encoding="utf-8") as f:
                     text = f.read()
-                html_body = markdown.markdown(text, extensions=["tables", "fenced_code"])
+                html_body = markdown.markdown(
+                    text, extensions=["tables", "fenced_code"]
+                )
                 full_html = HTML_TEMPLATE.format(content=html_body).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-type", "text/html; charset=utf-8")
@@ -146,6 +151,7 @@ class DocsHandler(SimpleHTTPRequestHandler):
 
         return super().do_GET()
 
+
 def main():
     server = HTTPServer(("0.0.0.0", PORT), DocsHandler)
     print(f"Serving auto-refreshing GitHub Pages preview at: http://localhost:{PORT}")
@@ -153,6 +159,7 @@ def main():
         server.serve_forever()
     except KeyboardInterrupt:
         pass
+
 
 if __name__ == "__main__":
     main()

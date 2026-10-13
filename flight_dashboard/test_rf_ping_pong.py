@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Rocket BlackBox — End-to-End Bidirectional LoRa Ping-Pong Test Runner
+Rocket BlackBox - End-to-End Bidirectional LoRa Ping-Pong Test Runner
 ---------------------------------------------------------------------
 Concurrently runs:
 1. Ground station KISS responder on /dev/ttyACM0 (Waveshare USB-to-LoRa-HF)

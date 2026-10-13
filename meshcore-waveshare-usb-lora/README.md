@@ -8,7 +8,7 @@
 > go nowhere, and the ROM ISP bootloader answers at none of the baud rates tried.
 > There is no USB-only flashing path, so before you start you need **one of**:
 >
-> - **An SWD debug probe** — CMSIS-DAP, DAPLink or ST-Link V2, about €3–5 — plus
+> - **An SWD debug probe** - CMSIS-DAP, DAPLink or ST-Link V2, about €3–5 - plus
 >   four wires to the `3V3 / GND / SWDIO / SWCLK` pads. The probe is generic and
 >   also flashes a dozen other boards.
 > - **A board MeshCore already supports.** Heltec V3 flashes over Web Serial with
@@ -35,20 +35,20 @@ project or a shelf ornament.
 | | What | Notes |
 |---|---|---|
 | **Required** | The Waveshare USB-TO-LoRa-HF | With its antenna screwed on |
-| **Required** | **An SWD debug probe** | CMSIS-DAP, DAPLink or ST-Link V2 — **about €3–5**. This is the non-obvious dependency. |
+| **Required** | **An SWD debug probe** | CMSIS-DAP, DAPLink or ST-Link V2 - **about €3–5**. This is the non-obvious dependency. |
 | **Required** | Four wires | To reach the dongle's `3V3 / GND / SWDIO / SWCLK` pads. `NRST` is optional. |
 | **Required** | A micro-USB cable | The one that came with the dongle |
-| **Instead of the probe** | A board MeshCore already supports | [Heltec V3](https://www.heltec.org) — flashed over Web Serial, no probe at all — or the Waveshare RP2040-LoRa-HF, which takes a `.uf2` drag-and-drop. |
+| **Instead of the probe** | A board MeshCore already supports | [Heltec V3](https://www.heltec.org) - flashed over Web Serial, no probe at all - or the Waveshare RP2040-LoRa-HF, which takes a `.uf2` drag-and-drop. |
 
 **Why the probe is unavoidable on this board.** It is measured, not assumed, and
 the evidence is in [Flashing](#flashing): holding `KEY` while powering up does not
-enter the GD32F103's ROM ISP bootloader — it enters Waveshare's own proprietary
+enter the GD32F103's ROM ISP bootloader - it enters Waveshare's own proprietary
 update mode. No ROM ISP sync is answered at any of five baud rates. The USB cable
 alone cannot load firmware onto this board, and no software can change that.
 
 The probe is generic: it is not tied to this project, and the same one flashes a
 dozen other boards. If you have none and do not want one, buy a supported board
-instead — that path needs no tools at all, and everything else in this repository
+instead - that path needs no tools at all, and everything else in this repository
 (bot config, protocol expectations, KISS test client) applies unchanged.
 
 ## Step by step
@@ -57,7 +57,7 @@ The whole job in order, with the detail in the linked sections. If you just want
 it working, `.\setup.ps1` does steps 1–5 for you.
 
 **1. Install the software prerequisites.** Five `winget` commands and a Go
-download; see [Prerequisites](#prerequisites). Nothing else is needed — the ARM
+download; see [Prerequisites](#prerequisites). Nothing else is needed - the ARM
 cross compiler is fetched into the repository for you.
 
 **2. Build the firmware.**
@@ -139,7 +139,7 @@ From a fresh clone, on Windows with PowerShell:
 That checks the prerequisites, fetches the ARM toolchain, builds the firmware,
 runs the test gate, flashes over SWD **if a probe is attached**, checks the
 modem answers, and points `bot/config.toml` at the right serial port. Whatever
-it could not do — no probe wired up, say — it reports as the next thing to do
+it could not do - no probe wired up, say - it reports as the next thing to do
 rather than failing.
 
 Then, as the second command:
@@ -158,8 +158,8 @@ Options worth knowing:
 | `.\setup.ps1 -DryRun` | Print the plan and change nothing. |
 | `.\run-bot.ps1 -v` | Verbose logging. |
 
-A freshly flashed dongle is already on the MeshCore EU/UK narrow preset —
-869.618 MHz, SF8, 62.5 kHz, 4/8, 17 dBm — because `radio.c` applies those to the
+A freshly flashed dongle is already on the MeshCore EU/UK narrow preset -
+869.618 MHz, SF8, 62.5 kHz, 4/8, 17 dBm - because `radio.c` applies those to the
 SX1262 before it waits for any command. So `python tools\kissmon.py -p COM3
 monitor` can receive straight after flashing, without configuring the radio
 first. (The protocol operation is called `set-radio`; the kissmon command that
@@ -240,7 +240,7 @@ So there are two ways forward, plus one jumper-only possibility.
 The firmware package ships `firmware-upload.exe` and four `.ws` images, so it is
 worth recording why patching one of them is not a way in. Measured:
 
-- The updater contains **no cryptography and no compression** — no AES, no hash,
+- The updater contains **no cryptography and no compression** - no AES, no hash,
   no archiver. It uses `FileStream`, `SerialPort` and a `Thread`, so it streams
   the file to the dongle verbatim and the **dongle** decrypts it.
 - The `.ws` files have a flat entropy of 8.00 bits/byte across all 256 byte
@@ -248,7 +248,7 @@ worth recording why patching one of them is not a way in. Measured:
   rather than merely compressed.
 - The transform is deterministic: the `HF` and `LF` images are **byte-identical
   for their first 23,568 bytes** and differ only in the band-specific tail. That
-  means no per-file nonce. No simple constant XOR works either — all 256 keys
+  means no per-file nonce. No simple constant XOR works either - all 256 keys
   were tried at every offset looking for a Cortex-M vector table, with no hit.
 
 So the key lives in the dongle's own firmware. Recovering it means reading that
@@ -292,21 +292,21 @@ So the board already has a Cortex Debug header, and you need four wires:
 
 | probe | board pad | MCU pin |
 |---|---|---|
-| 3V3 | 3V3 | — |
-| GND | GND | — |
+| 3V3 | 3V3 | - |
+| GND | GND | - |
 | SWDIO | SWDIO | PA13 |
 | SWCLK | SWCLK | PA14 |
 | NRST | *(optional)* | pin 7, shared with the SX1262 reset |
 
-You do not need an ST-Link specifically — any SWD probe works:
+You do not need an ST-Link specifically - any SWD probe works:
 
-- **CMSIS-DAP / DAPLink** — the smallest and often the cheapest option.
-- **ST-Link V2** — the common clone is a few euro, and if you already own one
+- **CMSIS-DAP / DAPLink** - the smallest and often the cheapest option.
+- **ST-Link V2** - the common clone is a few euro, and if you already own one
   from another project this is free.
 - Anything else pyOCD supports.
 
-If you happen to have no probe at all but do have a spare ARM board — an
-Arduino, or any other microcontroller you can bit-bang two wires with — it can
+If you happen to have no probe at all but do have a spare ARM board - an
+Arduino, or any other microcontroller you can bit-bang two wires with - it can
 drive SWD too.
 
 ### Option A: an SWD probe (keeps your dongle, ~EUR 5)
@@ -318,7 +318,7 @@ powershell -ExecutionPolicy Bypass -File tools\flash-swd.ps1
 ```
 
 That runs pyOCD with a target written for this part. Note pyOCD only ships
-`stm32f103rc` for the family, which is 256 KiB of flash in **2 KiB pages** — the
+`stm32f103rc` for the family, which is 256 KiB of flash in **2 KiB pages** - the
 wrong geometry for a GD32F103C8, whose 64 KiB is in **1 KiB pages**. Programming
 with the wrong blocksize would corrupt the flash, so `tools/pyocd/gd32f103c8t6.py`
 declares the real layout and reuses the STM32F1 flash algorithm, which the
@@ -331,7 +331,7 @@ already unprotected.
 
 If pyOCD cannot clear read protection, fall back to STM32CubeProgrammer: erase
 the chip, then download `firmware/firmware.bin` at `0x08000000`. You do **not**
-need Archie3d's bootloader for this — plain CubeProgrammer at `0x08000000` is
+need Archie3d's bootloader for this - plain CubeProgrammer at `0x08000000` is
 enough, since this firmware is linked for that address. Either way this erases
 the vendor firmware for good, though Waveshare can supply the vendor image again.
 
@@ -370,21 +370,21 @@ weighing against Option A before buying anything.
 
 ## Prerequisites
 
-The hardware you need is [above](#what-you-have-to-supply-in-hardware) —
+The hardware you need is [above](#what-you-have-to-supply-in-hardware) -
 in particular the SWD probe. This section is the software side, on Windows with
 PowerShell:
 
 - The dongle, with its antenna
 - This repository
 - Python 3.8+ and the packages in `requirements-dev.txt`:
-  `pip install -r requirements-dev.txt` — that is `pyserial` for `kissmon.py`,
+  `pip install -r requirements-dev.txt` - that is `pyserial` for `kissmon.py`,
   `find_port.py` and `gd32_isp.py`, plus `ruff` for the lint step and `pyocd` for
   flashing. `tools/ci.ps1` checks for them and names that file if one is missing.
-- `make` — `winget install --id ezwinports.make --scope user`
+- `make` - `winget install --id ezwinports.make --scope user`
 - Git for Windows (libopencm3's build shells out to `printf` and `python3`)
-- A host C compiler, for the native tests in `tools/test.ps1` —
+- A host C compiler, for the native tests in `tools/test.ps1` -
   `winget install --id BrechtSanders.WinLibs.POSIX.MSVCRT --scope user`
-- Go, for the contract step that runs the real bot against the real firmware —
+- Go, for the contract step that runs the real bot against the real firmware -
   <https://go.dev/dl/>
 
 The host compiler and the ARM cross compiler are different things: the native
@@ -470,7 +470,7 @@ python tools\kissmon.py -p COM3 setradio --freq 869618000 --bw 62500 --sf 8 --cr
 ```
 
 The sync word is fixed in firmware at `0x12`, which is RadioLib's
-`RADIOLIB_SX126X_SYNC_WORD_PRIVATE` — the value MeshCore's variants pass to
+`RADIOLIB_SX126X_SYNC_WORD_PRIVATE` - the value MeshCore's variants pass to
 `radio.begin()`. Meshtastic's `0x2B` and LoRaWAN's public `0x34` would each put
 you on a different network, so if you see adverts from Meshtastic nodes but no
 MeshCore nodes at all, the sync word is the first thing to suspect. The firmware
@@ -518,12 +518,12 @@ operator reliably does with it is read it off one screen and type it into anothe
 a bot's config, a QR code, a ticket, a note on the bench. It is random bytes from
 a CSPRNG with no design in it, so mining is the one case where brute force is the
 right answer. Pay for the search once, and every later contact with the dongle is
-cheaper — including the case where somebody has to read it out over a handset to
+cheaper - including the case where somebody has to read it out over a handset to
 somebody who cannot see the screen.
 
 [**meshcore-vanity-key**](https://neohiro.github.io/meshcore-meshtastic-vanity-key/) does
 that. It mines Ed25519 keypairs until the encoded public key matches a pattern,
-entirely in the browser — Web Workers plus libsodium WASM, no network round-trip,
+entirely in the browser - Web Workers plus libsodium WASM, no network round-trip,
 no telemetry, working offline once loaded.
 
 ### Vanity and functional are two different goals
@@ -532,31 +532,31 @@ no telemetry, working offline once loaded.
 |---|---|---|
 | **Why** | the identity reads well and is memorable | the identity is *checkable* by a human under bad conditions |
 | **Typical target** | `mc1qneohiro…`, `!a1b2c3…` | a prefix **and** a suffix, so a half-transcribed key fails loudly |
-| **Cost** | `16ⁿ` attempts for `n` hex characters — 4 is instant, 6 is minutes | that, squared: each constrained end multiplies rather than adds |
+| **Cost** | `16ⁿ` attempts for `n` hex characters - 4 is instant, 6 is minutes | that, squared: each constrained end multiplies rather than adds |
 | **Classic mistake** | asking for 9+ characters. That is a lottery ticket, not a mnemonic | mining a *reserved* prefix and then wondering why the client refuses the key |
 
 Same code path, same flags. The distinction only matters when deciding what to ask
-for — and in both cases the pattern is matched against the **encoded public key**,
+for - and in both cases the pattern is matched against the **encoded public key**,
 never the private one, which never leaves your machine.
 
 ### Meshtastic prefix and suffix mining
 
 Meshtastic has two unrelated things people both call "the key", and they are mined
-by two unrelated means. Conflating them is the usual first mistake — and on this
+by two unrelated means. Conflating them is the usual first mistake - and on this
 dongle it is a live confusion, because a MeshCore node and a Meshtastic node often
 share the same airwaves and never share a key format.
 
-**Channel PSK — symmetric, minable directly.** A channel is a name plus a
+**Channel PSK - symmetric, minable directly.** A channel is a name plus a
 pre-shared key written `base64:…`. `AQ==` is the single byte `0x01` and is the
-well-known default on every device — not a secret. `Ag==`–`Cg==` are the
+well-known default on every device - not a secret. `Ag==`–`Cg==` are the
 `simple1`–`simple9` shorthands. A private channel is 16 bytes (AES-128) or 32 bytes
 (AES-256). A PSK is raw key material rather than a signing key, so there is no
-keypair to derive — the bytes *are* the key, which makes a vanity PSK a genuinely
+keypair to derive - the bytes *are* the key, which makes a vanity PSK a genuinely
 **functional** target rather than a decoration. `--encoding base64` mines exactly
 this form:
 
 ```bash
-# browser: neohiro.github.io/meshcore-meshtastic-vanity-key — prefix box, suffix box, go
+# browser: neohiro.github.io/meshcore-meshtastic-vanity-key - prefix box, suffix box, go
 meshcore-vanity NHI --encoding base64              # channel key starting "NHI…"
 meshcore-vanity NHI --encoding base64 --suffix 0   # …and ending "…0"
 meshcore-vanity --encoding base64 --suffix qw      # suffix only
@@ -569,9 +569,9 @@ round trip when a bare 24-character base64 blob does not. Note that base64's las
 character is constrained, so a base64 suffix has to end in one of
 `048AEIMQUYcgkosw`.
 
-**Node key and `!` user ID — a different curve, and one more derivation.** A
+**Node key and `!` user ID - a different curve, and one more derivation.** A
 Meshtastic node's key is **Curve25519**, not Ed25519, and the `!` + hex ID the
-firmware advertises is a *further* derivation from that node key — since firmware
+firmware advertises is a *further* derivation from that node key - since firmware
 2.8, from the public-key identity rather than from a hardware MAC address, which is
 what lets a node keep its identity across a factory reset. Two separate things
 therefore have to line up:
@@ -585,7 +585,7 @@ therefore have to line up:
 The trap worth naming is the curve. `--encoding hex` chooses how a key is
 *printed*; it does not choose which key it is. On the default Ed25519 derivation
 you get a valid MeshCore device key and **not** a Meshtastic node key, and the
-node will simply refuse the import — which reads like a firmware bug and is not
+node will simply refuse the import - which reads like a firmware bug and is not
 one. Meshtastic node-key mining is a different algorithm, not a different
 encoding.
 
@@ -608,7 +608,7 @@ here changes the identity a shipped firmware hands you**. Mining is for a node y
 are deliberately provisioning: a fresh key imported over USB, a companion client,
 or a factory-reset device whose identity you are re-establishing anyway. If a node
 already has an identity, mine a *new* one and swap it in deliberately. Never
-overwrite a key that peers already hold — and on a mesh that shares air with
+overwrite a key that peers already hold - and on a mesh that shares air with
 Meshtastic, expect both ID formats to show up in the same capture while you do it.
 
 ## Layout
@@ -711,20 +711,20 @@ a risk. The largest linked frame is `kiss_frame_received` at 104 bytes.
 
 That check exists because the receive path had exactly this bug. The KISS
 reassembly parser embeds a 256-byte buffer and used to be a local of
-`serial_rx_task`, where it measured **536 bytes against a 1024-byte stack** —
+`serial_rx_task`, where it measured **536 bytes against a 1024-byte stack** -
 over half the stack, before any callee. It is file scope now, which costs
 nothing: only that task ever touches it. `serial_rx_task`'s own frame is 16 bytes.
 
 The bound is per frame, not per call chain. A real bound needs a call graph, and
 this firmware dispatches through function pointers (`handler->frame_received`, the
-sx126x callbacks) that a static pass cannot resolve — so treat it as a floor on
+sx126x callbacks) that a static pass cannot resolve - so treat it as a floor on
 what is safe rather than a proof.
 
 ### Guards that cannot pass quietly
 
 A check is only worth having if you have watched it fail. Breaking something on
 purpose and confirming the right test notices is the only way to tell a real
-check from one that passes for the wrong reason — and it is easy to get wrong,
+check from one that passes for the wrong reason - and it is easy to get wrong,
 because the mutation can silently not apply.
 
 That happened twice here. One compared `pathlib.Path(...) == "revert"`, which is
@@ -751,7 +751,7 @@ Both return immediately, and all radio work happens in `radio_isr_task`.
 
 `tests/test_isr_safety.py` keeps it that way. It matters because a handler that
 started a transfer mid-command would interleave two conversations on one bus and
-corrupt a register write — and that presents as a radio that is *intermittently*
+corrupt a register write - and that presents as a radio that is *intermittently*
 flaky, not as a concurrency bug, so it would be very hard to diagnose from the
 symptom. Interrupt latency itself still needs hardware; only the absence of
 re-entry is checked here.
@@ -764,8 +764,8 @@ value, which is also what halved the parser buffer above.
 Two options change what it does: `-Strict` makes a missing `meshcore-bot` fatal
 rather than a warning, since its absence means the end-to-end acceptance test is
 not running at all; `-XtAL` decides **which build is left in `firmware/bin`**,
-which matters more than it sounds. Both variants are always built — that is the
-point, since an instruction that no longer compiles is worse than none — and each
+which matters more than it sounds. Both variants are always built - that is the
+point, since an instruction that no longer compiles is worse than none - and each
 build overwrites the last, so `-XtAL` simply reverses the order.
 
 Without `-XtAL` you are left holding the **TCXO** image. If your board is the
@@ -993,14 +993,14 @@ None of it is mine, and the thanks matter more than the list order.
 ### MeshCore
 
 **[MeshCore](https://meshcore.io)** is the project this exists to join. The KISS
-modem protocol implemented here is theirs — the `SetHardware` command set, the
+modem protocol implemented here is theirs - the `SetHardware` command set, the
 signal-report semantics, the packet framing, the EU/UK narrow-band presets. Their
 firmware for supported boards is the reference this firmware is written to agree
 with, byte for byte, and the contract tests in `tests/contract/` check exactly
 that using their Go implementation.
 
-- [meshcore.io](https://meshcore.io) — the project, its firmware and its docs
-- [meshcore-dev/MeshCore](https://github.com/meshcore-dev/MeshCore) —
+- [meshcore.io](https://meshcore.io) - the project, its firmware and its docs
+- [meshcore-dev/MeshCore](https://github.com/meshcore-dev/MeshCore) -
   firmware, and `docs/kiss_modem_protocol.md`, which is the specification this
   firmware implements
 
@@ -1011,33 +1011,33 @@ authors, whose Go implementation is what the tests negotiate with.
 ### Firmware and tooling this builds on
 
 - **[Archie3d/waveshare-usb-lora-firmware](https://github.com/Archie3d/waveshare-usb-lora-firmware)**
-  — the base this firmware starts from: the SX1262 bring-up, the CSMA/CAD handling
+  - the base this firmware starts from: the SX1262 bring-up, the CSMA/CAD handling
   and the KISS layer over a Waveshare USB-TO-LoRa board.
 - **[Archie3d/waveshare-usb-lora](https://github.com/Archie3d/waveshare-usb-lora)**
-  — the bootloader whose layout and flashing notes this project documents, and
+  - the bootloader whose layout and flashing notes this project documents, and
   whose `0x08004000` origin this build deliberately does not use.
-- **[meshcore-go/meshcore-bot](https://github.com/meshcore-go/meshcore-bot)** —
+- **[meshcore-go/meshcore-bot](https://github.com/meshcore-go/meshcore-bot)** -
   the bot that runs against this modem; pinned to a release rather than `@latest`
   so the acceptance test keeps testing what actually ships.
-- **[Semtech SX126x driver](https://github.com/LoraNet/SX126x)** — the radio
+- **[Semtech SX126x driver](https://github.com/LoraNet/SX126x)** - the radio
   driver, vendored unmodified in `firmware/sx126x/`.
-- **[RadioLib](https://github.com/jgromes/RadioLib)** — the source of the sync
+- **[RadioLib](https://github.com/jgromes/RadioLib)** - the source of the sync
   word `0x12` (`RADIOLIB_SX126X_SYNC_WORD_PRIVATE`) and of the low-data-rate
   optimisation rule, which is derived from symbol duration exactly as RadioLib
   does it rather than from spreading factor alone.
 
 ### Libraries and the hardware
 
-- **[FreeRTOS](https://www.freertos.org)** V9.0.0 — Real Time Engineers Ltd.,
+- **[FreeRTOS](https://www.freertos.org)** V9.0.0 - Real Time Engineers Ltd.,
   vendored in `firmware/rtos/`.
-- **[libopencm3](https://libopencm3.org)** — the bare-metal library, vendored in
+- **[libopencm3](https://libopencm3.org)** - the bare-metal library, vendored in
   `firmware/libopencm3/`, from the
   [libopencm3-template](https://github.com/libopencm3/libopencm3-template).
   libopencm3 is LGPL-3.0, and that is the one licence here with obligations the
   MIT below does not discharge: the firmware links it, so the LGPL terms apply to
   the built `firmware.bin` and anyone redistributing it. The MIT licence covers
   this repository's own code, not the vendored trees.
-- **[Waveshare](https://www.waveshare.com)** — the USB-TO-LoRa-HF board, and the
+- **[Waveshare](https://www.waveshare.com)** - the USB-TO-LoRa-HF board, and the
   schematics that established what is actually on it.
-- **[pyOCD](https://github.com/pyocd/pyOCD)** — CMSIS-DAP and ST-Link support,
+- **[pyOCD](https://github.com/pyocd/pyOCD)** - CMSIS-DAP and ST-Link support,
   including the custom target file for this part in `tools/pyocd/`.

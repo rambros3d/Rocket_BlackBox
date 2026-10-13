@@ -24,7 +24,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Rocket BLACKBOX — Avionics & Flight Data Recorder</title>
+    <title>Rocket BLACKBOX - Avionics & Flight Data Recorder</title>
     <!-- GitHub Pages / Primer Light CSS (Locked to Light Mode) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
     <style>
@@ -117,7 +117,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
         <a href="/dashboard/" class="cta-btn">Launch Dashboard &rarr;</a>
       </div>
-      <h1><a href="/" style="text-decoration:none; color:inherit;">Rocket BLACKBOX — Avionics &amp; Flight Data Recorder</a></h1>
+      <h1><a href="/" style="text-decoration:none; color:inherit;">Rocket BLACKBOX - Avionics &amp; Flight Data Recorder</a></h1>
       {content}
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js"></script>

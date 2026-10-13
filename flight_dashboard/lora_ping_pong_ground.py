@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Rocket BlackBox — Ground Station Automated LoRa Ping-Pong Responder
+Rocket BlackBox - Ground Station Automated LoRa Ping-Pong Responder
 ---------------------------------------------------------------------
 Connects to the Waveshare USB-to-LoRa dongle running meshcore-waveshare-usb-lora.
 Tunes the SX1262 to match the rocket payload (868.0 MHz, 125 kHz BW, SF7, CR 4/5).

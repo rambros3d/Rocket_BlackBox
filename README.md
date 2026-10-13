@@ -50,7 +50,7 @@ Pages: Dashboard (snapshot and overview layouts), Live Data, Map View with path 
 ```bash
 cd dashboard
 npm install
-npm run dev      # http://localhost:5173 — open in Chrome or Edge (Web Serial)
+npm run dev      # http://localhost:5173 - open in Chrome or Edge (Web Serial)
 npm run build    # static build in dashboard/dist
 ```
 

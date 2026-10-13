@@ -75,6 +75,8 @@ class LinkController {
   private autoConnectListenerAttached = false
   private lastAutoConnectError = 0
   private lastDownlinkLink: { rssi: number; snr: number } | null = null
+  private ambientNoiseFloor = -105
+  private lastRssiQueryMs = 0
   private lastPingMs = 0
   private pingInFlight = false
   busy = false
@@ -124,6 +126,8 @@ class LinkController {
     this.writeChain = Promise.resolve()
     this.busy = false
     this.hardwareWaiter = null
+    this.lastDownlinkLink = null
+    this.lastRssiQueryMs = 0
 
     const t = useTelemetry.getState()
     const settings = useSettings.getState()
@@ -387,6 +391,9 @@ class LinkController {
     if (this.mode === 'lora') {
       for (const packet of this.kissParser.push(chunk)) {
         if (packet.command === KISS_DATA) {
+          if (packet.body.length > 0) {
+            this.queryInstantaneousRssi()
+          }
           this.loraParser.reset()
           const events = this.loraParser.push(packet.body, now)
           const hasBinaryFrame = events.some((ev) => ev.kind === 'frame' || ev.kind === 'fast-frame' || ev.kind === 'ack')
@@ -416,7 +423,15 @@ class LinkController {
           }
         } else if (packet.command === KISS_HARDWARE) {
           const body = packet.body
-          if (body[0] === 0xf9 && body.length >= 3) {
+          if (body[0] === 0x8d && body.length >= 2) {
+            // Instantaneous SX1262 signal strength response (signed dBm)
+            const rawRssi = (body[1] << 24) >> 24
+            if (rawRssi < 0) {
+              const snr = Math.min(25, Math.max(-20, Number((rawRssi - this.ambientNoiseFloor).toFixed(1))))
+              this.lastDownlinkLink = { rssi: rawRssi, snr }
+              t.applyLinkMetrics(rawRssi, snr)
+            }
+          } else if (body[0] === 0xf9 && body.length >= 3) {
             // body[1] is signed SNR in quarter-dB; body[2] is signed RSSI in dBm
             const snr = ((body[1] << 24) >> 24) / 4
             const rssi = (body[2] << 24) >> 24
@@ -601,6 +616,14 @@ class LinkController {
           this.pingInFlight = false
         }, 1500)
       })
+  }
+
+  private queryInstantaneousRssi() {
+    if (this.mode !== 'lora' || !this.port || this.busy) return
+    const now = Date.now()
+    if (now - this.lastRssiQueryMs < 80) return
+    this.lastRssiQueryMs = now
+    void this.write(encodeKiss(KISS_HARDWARE, Uint8Array.of(0x0d))).catch(() => undefined)
   }
 }
 

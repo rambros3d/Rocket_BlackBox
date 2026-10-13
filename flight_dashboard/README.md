@@ -1,4 +1,4 @@
-# Rocket BlackBox — Flight Dashboard & Ground Station
+# Rocket BlackBox - Flight Dashboard & Ground Station
 
 Ground station visualization, telemetry logging, and live receiver tools for the **Rocket BlackBox** avionics payload.
 
