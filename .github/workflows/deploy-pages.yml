@@ -45,6 +45,11 @@ jobs:
           mkdir -p docs/dashboard
           cp -r dashboard/dist/* docs/dashboard/
 
+      - name: Build Documentation HTML
+        run: |
+          python3 -m pip install markdown
+          python3 docs/build_docs.py
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
