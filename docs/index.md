@@ -25,6 +25,16 @@ The **DSRSLV Phase 2 (P2)** mission aims for an apogee of approximately 5 km, ca
 
 ---
 
+## EasyEDA Educator Program
+
+[![EasyEDA Educator Program](assets/easyeda-educator-program.png)](https://easyeda.com/)
+
+This project's PCB design, fabrication, and PCBA assembly were generously sponsored by the **[EasyEDA Educator Program](https://easyeda.com/)** and fabricated by **[JLCPCB](https://jlcpcb.com/)**.
+
+---
+---
+
+
 ## Sensor Data & Measurement Capabilities
 
 Sensors are split across two I2C buses, an internal SPI bus for LoRa RF telemetry, and a dedicated GNSS UART.
@@ -264,9 +274,3 @@ python flight_dashboard/test_rf_ping_pong.py
 ```
 
 ---
-
-## EasyEDA Educator Program
-
-[![EasyEDA Educator Program](assets/easyeda-educator-program.png)](https://easyeda.com/)
-
-This project's PCB design, fabrication, and PCBA assembly were generously sponsored by the **[EasyEDA Educator Program](https://easyeda.com/)** and fabricated by **[JLCPCB](https://jlcpcb.com/)**.

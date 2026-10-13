@@ -1,478 +1,1034 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en-US">
-  <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Rocket BLACKBOX — Avionics & Flight Data Recorder</title>
-    <!-- GitHub Pages / Primer Light CSS (Locked to Light Mode) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
-    <style>
-      :root {
-        color-scheme: light;
-      }
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-        background-color: #ffffff !important;
-        color: #24292f !important;
-        color-scheme: light !important;
-      }
-      .container-lg {
-        max-width: 1012px;
-        margin-right: auto;
-        margin-left: auto;
-      }
-      .px-3 {
-        padding-right: 16px !important;
-        padding-left: 16px !important;
-      }
-      .my-5 {
-        margin-top: 32px !important;
-        margin-bottom: 32px !important;
-      }
-      .markdown-body {
-        font-size: 16px;
-        line-height: 1.5;
-        word-wrap: break-word;
-        background-color: #ffffff !important;
-        color: #24292f !important;
-        color-scheme: light !important;
-      }
-      /* Responsive image constraint */
-      .markdown-body img {
-        max-height: 400px;
-        max-width: 100%;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-        display: block;
-        margin: 12px 0 16px 0;
-        border: 1px solid #d0d7de;
-        border-radius: 6px;
-      }
-      /* Dashboard Banner CTA */
-      .dashboard-banner {
-        background: linear-gradient(135deg, #0969da 0%, #054da7 100%);
-        color: #ffffff !important;
-        padding: 16px 20px;
-        border-radius: 8px;
-        margin-bottom: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        box-shadow: 0 4px 12px rgba(9, 105, 218, 0.2);
-      }
-      .dashboard-banner a.cta-btn {
-        background-color: #ffffff;
-        color: #0969da !important;
-        font-weight: 600;
-        text-decoration: none;
-        padding: 8px 18px;
-        border-radius: 6px;
-        white-space: nowrap;
-        transition: transform 0.15s ease, background-color 0.15s ease;
-      }
-      .dashboard-banner a.cta-btn:hover {
-        background-color: #f6f8fa;
-        transform: translateY(-1px);
-      }
-      /* Callout styling */
-      .markdown-body blockquote {
-        border-left: 4px solid #0969da;
-        background-color: #f6f8fa;
-        padding: 12px 16px;
-        border-radius: 0 6px 6px 0;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container-lg px-3 my-5 markdown-body">
-      <div class="dashboard-banner">
-        <div>
-          <div style="font-size: 1.1rem; font-weight: 700;">🚀 Live Ground Station Telemetry Dashboard</div>
-          <div style="font-size: 0.9rem; opacity: 0.95;">Direct Web Serial connection for LoRa ground receiver and flight payload</div>
-        </div>
-        <a href="/dashboard/" class="cta-btn">Launch Dashboard &rarr;</a>
-      </div>
-      <h1><a href="/" style="text-decoration:none; color:inherit;">Rocket BLACKBOX — Avionics &amp; Flight Data Recorder</a></h1>
-      <p><strong>Rocket BLACKBOX</strong> is an open-source avionics and environmental flight data recorder (FDR) designed for model rocketry and sounding rocket payloads.</p>
-<p>Built around the <strong>RAK3112</strong> module (Espressif ESP32-S3 + Semtech SX1262 LoRa), the board carries a multi-sensor array across two independent I2C buses, a 4-bit SDMMC slot for high-rate flight logging, multi-constellation GNSS with a 1PPS hardware timing line, long-range digital telemetry, and a push-button soft-latch power circuit with USB battery management.</p>
-<h3 id="source-files-rambros3drocket_blackbox">Source files: <a href="https://github.com/rambros3d/Rocket_BlackBox">rambros3d/Rocket_BlackBox</a></h3>
-<blockquote>
-<p>[!TIP]
-<strong>🚀 Live Ground Station Telemetry Dashboard</strong>: Access live telemetry, 3D attitude, and maps at <strong><a href="/dashboard/">Launch Telemetry Dashboard</a></strong> (supports Web Serial connections to the Waveshare LoRa receiver and USB payload).</p>
-</blockquote>
-<ul>
-<li>Diagnostic firmware: <a href="https://github.com/rambros3d/Rocket_BlackBox/tree/main/test_firmware"><code>test_firmware</code></a></li>
-<li>Flight telemetry firmware: <a href="https://github.com/rambros3d/Rocket_BlackBox/tree/main/flight_firmware"><code>flight_firmware</code></a></li>
-<li>Telemetry Dashboard: <a href="/dashboard/"><code>/dashboard/</code></a></li>
-<li>3D Model: <a href="https://a360.co/47nZXGg"><code>fusion360</code></a></li>
-<li>PCB: <a href="https://oshwlab.com/shreeramlive/project_dmtpicmk"><code>oshwlab</code></a></li>
-</ul>
-<hr />
-<h2 id="mission-dsrslv-sinsme-foundation">Mission: DSRSLV (SINSME Foundation)</h2>
-<p>Rocket BlackBox is developed for the <strong>DSRSLV</strong> sounding rocket initiative, spearheaded by the <strong><a href="https://www.sinsmefoundation.org">SINSME Foundation</a></strong>.</p>
-<p>The <strong>DSRSLV Phase 2 (P2)</strong> mission aims for an apogee of approximately 5 km, carrying student atmospheric payloads and flight instrumentation to foster hands-on space science and aerospace education.</p>
-<p><strong>Mission Details:</strong> <a href="https://www.sinsmefoundation.org/general-7-1">SINSME Foundation DSRSLV Project</a></p>
-<hr />
-<h2 id="sensor-data-measurement-capabilities">Sensor Data &amp; Measurement Capabilities</h2>
-<p>Sensors are split across two I2C buses, an internal SPI bus for LoRa RF telemetry, and a dedicated GNSS UART.</p>
-<table>
-<thead>
-<tr>
-<th>Primary Role</th>
-<th>Data Types</th>
-<th>Hardware Interface</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Barometric Altimeter</strong><br><small>MS5607</small></td>
-<td><strong>Barometric Pressure:</strong> 10 to 1200 hPa (Resolution: 0.01 hPa / ~20 cm altitude, 24-bit $\Delta\Sigma$ ADC, factory PROM calibration with CRC4 checksum)<br><strong>Temperature:</strong> −40°C to +85°C (Resolution: &lt; 0.01°C, Accuracy: ±1.0°C)</td>
-<td>I2C Bus 1<br><code>0x77</code></td>
-</tr>
-<tr>
-<td><strong>CO2, Temperature &amp; Humidity</strong><br><small>Sensirion SCD40</small></td>
-<td><strong>CO2 Concentration:</strong> 400 to 5000 ppm (Resolution: 1 ppm, Accuracy: ±(40 ppm + 5% of reading))<br><strong>Temperature:</strong> −10°C to +60°C (Resolution: 0.01°C, 16-bit, Accuracy: ±0.8°C)<br><strong>Relative Humidity:</strong> 0% to 100% RH (Resolution: 0.01% RH, 16-bit, Accuracy: ±6% RH)</td>
-<td>I2C Bus 1<br><code>0x62</code></td>
-</tr>
-<tr>
-<td><strong>VOC &amp; NOx Gas Index</strong><br><small>Sensirion SGP41</small></td>
-<td><strong>VOC Gas Index:</strong> 1 to 500 (16-bit raw ticks, limit &lt; 1 to 1000 ppm VOC)<br><strong>NOx Gas Index:</strong> 1 to 500 (16-bit raw ticks, detection limit 0.05 to 10 ppm NO2)<br><strong>Compensation:</strong> Accepts external humidity and temperature for baseline drift correction</td>
-<td>I2C Bus 1<br><code>0x59</code></td>
-</tr>
-<tr>
-<td><strong>Ambient &amp; Solar Illuminance</strong><br><small>TSL25911FN</small></td>
-<td><strong>Dual Optical Channels:</strong> CH0 Full Spectrum (300–1100 nm) &amp; CH1 Infrared (500–1100 nm)<br><strong>Dynamic Range:</strong> 600,000,000:1 (188 µlux up to 88,000 lux, 16-bit ADC)<br><strong>Programmable Gain:</strong> 1×, 25×, 428×, 9876× with 100–600 ms integration timing</td>
-<td>I2C Bus 1<br><code>0x29</code> (Device ID: <code>0x50</code>)</td>
-</tr>
-<tr>
-<td><strong>UV Index &amp; Ambient Light</strong><br><small>LTR-390UV-01</small></td>
-<td><strong>Ambient Light (ALS):</strong> 0.01 to 64,000 lux (spectral peak 550 nm, photopic human eye response)<br><strong>UV Spectrum:</strong> UVA / UVB (280–400 nm), 13 to 20-bit resolution, UV Index 0 to 12+</td>
-<td>I2C Bus 1<br><code>0x53</code></td>
-</tr>
-<tr>
-<td><strong>9-DOF IMU &amp; Attitude</strong><br><small>Bosch BNO055</small></td>
-<td><strong>Accelerometer:</strong> ±2g to ±16g (14-bit, 3 axes)<br><strong>Gyroscope:</strong> ±125°/s to ±2000°/s (16-bit, 3 axes)<br><strong>Magnetometer:</strong> ±1300 µT (X, Y), ±2500 µT (Z) (16-bit, 0.3 µT resolution, 3 axes)<br><strong>Sensor Fusion:</strong> On-chip ARM Cortex-M0 coprocessor outputs quaternions (w, x, y, z) and Euler angles (0–360° @ 0.0625°)</td>
-<td>I2C Bus 2<br><code>0x28</code></td>
-</tr>
-<tr>
-<td><strong>GNSS &amp; Time Sync</strong><br><small>Beitian BE-166</small></td>
-<td><strong>Position &amp; Velocity:</strong> GPS, Galileo, BeiDou, QZSS - 2.0 m CEP horizontal, 0.05 m/s velocity, up to 50,000 m altitude<br><strong>1PPS Timing:</strong> Hardware pulse, 20 ns RMS</td>
-<td>UART (115200 baud)<br>Hardware 1PPS line (<code>GPIO 38</code>)</td>
-</tr>
-<tr>
-<td><strong>Auxiliary Environmental</strong><br><small>Bosch BME680</small></td>
-<td><strong>Barometric Pressure:</strong> 300 to 1100 hPa (Resolution: 0.18 Pa / ~17 cm, Accuracy: ±0.12 hPa)<br><strong>Temperature &amp; Humidity:</strong> −40°C to +85°C (Resolution: 0.01°C), 0% to 100% RH (Resolution: 0.008% RH)<br><strong>Gas Resistance:</strong> 10 Ω to 60 MΩ MOX sensor for bVOC detection</td>
-<td>I2C Bus 1<br><code>0x76</code></td>
-</tr>
-<tr>
-<td><strong>LoRa RF Telemetry &amp; Link</strong><br><small>Semtech SX1262 (RAK3112)</small></td>
-<td><strong>Frequency:</strong> 868.000 MHz (HF Band)<br><strong>Modulation:</strong> LoRa (BW: 125 kHz, SF7, CR 4/5, Sync: <code>0x12</code>, 16 Preamble, CRC on)<br><strong>RF Performance:</strong> +22 dBm max TX power, −125 dBm sensitivity, DIO2 RF switch, TCXO 1.6V oscillator<br><strong>Data Rate &amp; Latency:</strong> ~5.47 kbps over-the-air, ~226 ms RTT bidirectional ping-pong, 0.0% packet loss tested</td>
-<td>Internal SPI Bus<br>(SCK=5, MISO=3, MOSI=6, NSS=7, RST=8, BUSY=48, DIO1=47, ANT_SW=4)</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="circuit-hardware-subsystems">Circuit &amp; Hardware Subsystems</h2>
-<p>The schematic is organized as one modular block per subsystem. Environmental sensors share one I2C bus, the IMU has its own dedicated I2C bus, GNSS uses UART plus a hardware timing line, and logging uses 4-bit SDMMC.</p>
-<h3 id="rak3112-mcu-lora-module">RAK3112 MCU + LoRa Module</h3>
-<p><img alt="RAK3112 module" src="assets/RAK3112-8-SM-I.png" /></p>
-<p>Central controller combining an ESP32-S3 dual-core microcontroller with an integrated Semtech SX1262 LoRa transceiver. It hosts the USB connection, both I2C buses, the GNSS UART, the SDMMC interface, and the RF telemetry frontend. The internal SX1262 links via internal SPI with TCXO frequency stabilization powered at 1.6V (DIO3) and an active RF switch powered by GPIO 4. Dedicated buttons handle boot-mode entry and reset, a resistor divider feeds battery voltage to the ADC for monitoring, and separate lines hold power on, sense the power button, and drive the status LED.</p>
-<p><strong>Ground Station Integration:</strong> The payload links wirelessly to a compact <strong>Waveshare USB-to-LoRa-HF (TCXO)</strong> dongle flashed with custom KISS TNC modem firmware (GD32F103 MCU). Over-the-air communication operates at 868.000 MHz with full-duplex CSMA bypass for rapid packet turnaround (~226 ms round-trip ping-pong, 0.0% packet loss).</p>
-<h3 id="charger-power-control-circuit">Charger &amp; Power Control Circuit</h3>
-<p><img alt="BQ24075 charger IC" src="assets/BQ24075RGTR.png" /></p>
-<p>Built around the BQ24075 LiPo charger with power-path management, so the board runs from USB when present and seamlessly falls back to battery. Charge and power-good LEDs show charger state. A dual-MOSFET push-button soft-latch holds the charger output enabled after the button is released; the MCU keeps itself powered through a hold line and can shut the board down by releasing it. A manual cutoff switch fully disconnects the battery, and a divided-down tap of the button lets the MCU detect presses.</p>
-<h3 id="voltage-regulator">Voltage Regulator</h3>
-<p><img alt="AIC1221 3.3 V LDO regulator" src="assets/AIC1221-33GY3TR.png" /></p>
-<p>A 3.3 V LDO that powers the MCU, sensors, GNSS, and SD card from the charger output, keeping noisy supply switching away from the analog sensor rails.</p>
-<h3 id="sd-card">SD Card</h3>
-<p><img alt="MicroSD card connector" src="assets/472192001.png" /></p>
-<p>MicroSD slot wired in 4-bit SDMMC mode for high-speed flight logging, with pull-ups on clock, command, and all four data lines.</p>
-<h3 id="gnss-receiver">GNSS Receiver</h3>
-<p><img alt="Beitian BE-166 GNSS module" src="assets/BE-I66.png" /></p>
-<p>Beitian multi-constellation receiver with integrated antenna. It streams position over UART and provides a hardware 1-pulse-per-second output for precise time synchronization. Pin headers break out the serial and timing signals.</p>
-<h3 id="9-axis-imu-sensor">9-Axis IMU Sensor</h3>
-<p><img alt="BNO055 9-axis IMU" src="assets/BNO055.png" /></p>
-<p>BNO055 with on-chip sensor fusion outputting absolute orientation as quaternions and Euler angles. It sits alone on the second I2C bus to avoid address conflicts with the environmental sensors, with a separate interrupt line for motion and data-ready events.</p>
-<h3 id="humidity-temperature-pressure-sensor">Humidity, Temperature &amp; Pressure Sensor</h3>
-<p><img alt="BME680 environmental sensor" src="assets/BME680.png" /></p>
-<p>BME680 auxiliary environmental sensor for pressure, temperature, humidity, and gas resistance.</p>
-<h3 id="altitude-sensor">Altitude Sensor</h3>
-<p><img alt="MS5607 barometric pressure sensor" src="assets/MS560702.png" /></p>
-<p>MS5607 barometric pressure and temperature sensor used as the primary altimeter, strapped for I2C operation.</p>
-<h3 id="co2-sensor">CO2 Sensor</h3>
-<p><img alt="SCD40 CO2 sensor" src="assets/SCD40-D-R1.png" /></p>
-<p>SCD40 photoacoustic CO2 sensor, also reporting temperature and relative humidity. Its core and heater supplies are tied together for 3.3 V operation as recommended for this use.</p>
-<h3 id="voc-nox-sensor">VOC &amp; NOx Sensor</h3>
-<p><img alt="SGP41 gas sensor" src="assets/SGP41-D-R4.png" /></p>
-<p>SGP41 metal-oxide gas sensor reporting VOC and NOx indices. Requires temperature and humidity compensation from the other sensors to correct baseline drift.</p>
-<h3 id="ambient-light-sensor">Ambient Light Sensor</h3>
-<p><img alt="TSL25911FN ambient light sensor" src="assets/TSL25911FN.png" /></p>
-<p>TSL25911FN dual-diode sensor measuring full-spectrum and infrared light separately so visible illuminance can be derived.</p>
-<h3 id="uv-sensor">UV Sensor</h3>
-<p><img alt="LTR-390 UV sensor" src="assets/LTR-390UV-01.png" /></p>
-<p>LTR-390 sensor measuring UVA/UVB for UV index plus ambient visible light, with an interrupt output for threshold events.</p>
-<hr />
-<h2 id="pin-mapping">Pin Mapping</h2>
-<table>
-<thead>
-<tr>
-<th>MCU Pin</th>
-<th>Sensor Pin</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Power &amp; Housekeeping</strong></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td><strong>GPIO 40</strong></td>
-<td><code>PWR_EN</code></td>
-<td>Power hold latch output. Driven HIGH by MCU to maintain DC-DC / LDO power alive; pulled LOW to shut down.</td>
-</tr>
-<tr>
-<td><strong>GPIO 39</strong></td>
-<td><code>PUSH_SW</code></td>
-<td>Push-button state detection input. Reads user button clicks after power-on.</td>
-</tr>
-<tr>
-<td><strong>GPIO 9</strong></td>
-<td><code>VADC</code></td>
-<td>Battery voltage monitor (ADC1 Channel 8, 1/2 resistor divider 5.1 kΩ / 5.1 kΩ).</td>
-</tr>
-<tr>
-<td><strong>GPIO 45</strong></td>
-<td><code>LED</code></td>
-<td>Active-high status and heartbeat LED indicator.</td>
-</tr>
-<tr>
-<td><strong>I2C Bus 1 - Environmental &amp; Optical Sensors</strong></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td><strong>GPIO 10</strong></td>
-<td><code>SDA1</code></td>
-<td>Environmental I2C Bus 1 serial data line (connected to MS5607, SCD40, SGP41, TSL25911FN, LTR-390, BME680 with 2.2 kΩ pull-up to 3.3V).</td>
-</tr>
-<tr>
-<td><strong>GPIO 11</strong></td>
-<td><code>SCL1</code></td>
-<td>Environmental I2C Bus 1 serial clock line (connected to MS5607, SCD40, SGP41, TSL25911FN, LTR-390, BME680 with 2.2 kΩ pull-up to 3.3V).</td>
-</tr>
-<tr>
-<td><strong>I2C Bus 2 - Inertial Navigation (BNO055)</strong></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td><strong>GPIO 2</strong></td>
-<td><code>SDA2</code></td>
-<td>Inertial navigation I2C Bus 2 serial data line for BNO055 (with 2.2 kΩ pull-up to 3.3V).</td>
-</tr>
-<tr>
-<td><strong>GPIO 1</strong></td>
-<td><code>SCL2</code></td>
-<td>Inertial navigation I2C Bus 2 serial clock line for BNO055 (with 2.2 kΩ pull-up to 3.3V).</td>
-</tr>
-<tr>
-<td><strong>GPIO 4</strong></td>
-<td><code>INT</code></td>
-<td>Hardware motion detection and data-ready interrupt line from BNO055.</td>
-</tr>
-<tr>
-<td><strong>GNSS - Beitian BE-166</strong></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td><strong>GPIO 42</strong></td>
-<td><code>GNSS_TXD</code></td>
-<td>UART receiver input (MCU RX) listening to multi-constellation NMEA and UBX stream at 115200 baud from BE-166.</td>
-</tr>
-<tr>
-<td><strong>GPIO 41</strong></td>
-<td><code>GNSS_RXD</code></td>
-<td>UART transmitter output (MCU TX) driving bidirectional UBX/NMEA configuration and query commands to BE-166.</td>
-</tr>
-<tr>
-<td><strong>GPIO 38</strong></td>
-<td><code>GNSS_IPPS</code></td>
-<td>Microsecond-accurate hardware 1 pulse-per-second (1PPS) synchronization interrupt line from BE-166.</td>
-</tr>
-<tr>
-<td><strong>MicroSD - 4-Bit SDMMC Interface</strong></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td><strong>GPIO 14</strong></td>
-<td><code>CLK</code></td>
-<td>High-speed 4-bit parallel SDMMC clock line.</td>
-</tr>
-<tr>
-<td><strong>GPIO 21</strong></td>
-<td><code>CMD</code></td>
-<td>High-speed 4-bit parallel SDMMC command and response line (with 10 kΩ pull-up to 3.3V).</td>
-</tr>
-<tr>
-<td><strong>GPIO 13</strong></td>
-<td><code>DAT0</code></td>
-<td>High-speed 4-bit parallel SDMMC data line bit 0 (with 10 kΩ pull-up to 3.3V).</td>
-</tr>
-<tr>
-<td><strong>GPIO 12</strong></td>
-<td><code>DAT1</code></td>
-<td>High-speed 4-bit parallel SDMMC data line bit 1 (with 10 kΩ pull-up to 3.3V).</td>
-</tr>
-<tr>
-<td><strong>GPIO 17</strong></td>
-<td><code>DAT2</code></td>
-<td>High-speed 4-bit parallel SDMMC data line bit 2 (with 10 kΩ pull-up to 3.3V).</td>
-</tr>
-<tr>
-<td><strong>GPIO 18</strong></td>
-<td><code>DAT3</code> / <code>CD</code></td>
-<td>High-speed 4-bit parallel SDMMC data line bit 3 / card detection (with 10 kΩ pull-up to 3.3V).</td>
-</tr>
-<tr>
-<td><strong>LoRa Transceiver - Semtech SX1262 (RAK3112 Internal)</strong></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td><strong>GPIO 5</strong></td>
-<td><code>LORA_SCK</code></td>
-<td>Internal SPI clock line for SX1262.</td>
-</tr>
-<tr>
-<td><strong>GPIO 3</strong></td>
-<td><code>LORA_MISO</code></td>
-<td>Internal SPI Master-In-Slave-Out line for SX1262.</td>
-</tr>
-<tr>
-<td><strong>GPIO 6</strong></td>
-<td><code>LORA_MOSI</code></td>
-<td>Internal SPI Master-Out-Slave-In line for SX1262.</td>
-</tr>
-<tr>
-<td><strong>GPIO 7</strong></td>
-<td><code>LORA_NSS</code></td>
-<td>Internal SPI Slave Select (Active Low) for SX1262.</td>
-</tr>
-<tr>
-<td><strong>GPIO 8</strong></td>
-<td><code>LORA_RST</code></td>
-<td>Hardware active-low reset line for SX1262.</td>
-</tr>
-<tr>
-<td><strong>GPIO 48</strong></td>
-<td><code>LORA_BUSY</code></td>
-<td>Hardware BUSY status line from SX1262 (monitored prior to SPI commands).</td>
-</tr>
-<tr>
-<td><strong>GPIO 47</strong></td>
-<td><code>LORA_DIO1</code></td>
-<td>Multi-purpose packet RX / TX done interrupt line from SX1262.</td>
-</tr>
-<tr>
-<td><strong>GPIO 4</strong></td>
-<td><code>LORA_ANT_SW</code></td>
-<td>RF Antenna Switch power gate (driven HIGH to activate RF frontend).</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="workarounds">Workarounds</h2>
-<p>During hardware bring-up and bench testing of the Rev 1.0 PCB, the onboard Bosch ICs did not work:</p>
-<ul>
-<li><strong>Bosch BNO055 (9-DOF IMU):</strong> The <code>nRESET</code> pin (Pin 11) was left unconnected / floating as per the datasheet. Maybe the internal weak pull-up is insufficient to overcome the floating state, the internal processor failed to respond (NACK) over I2C.</li>
-<li><strong>Bosch BME680 (Auxiliary Environmental Sensor):</strong> This one suffered a hard physical short between the SDA1 line and GND, requiring physical isolation via removal of its 0Ω series resistor.</li>
-</ul>
-<h3 id="external-imu-workaround">External IMU Workaround</h3>
-<ul>
-<li>To bypass the onboard IC issues and restore full 9-DOF inertial and attitude sensing for flight, an <strong>external 7semi BNO055 module</strong> is connected to dedicated I2C Bus 2 (<code>GPIO 2</code>, <code>GPIO 1</code>). Bus 2 is clocked strictly at <strong>50 kHz</strong> with a 100 ms timeout to reliably accommodate the BNO055 internal Cortex-M0 clock stretching during NDOF fusion cycles.</li>
-<li>Environmental data acquisition is handled by the primary MS5607 altimeter, Sensirion SCD40, and SGP41 sensors.</li>
-</ul>
-<hr />
-<h2 id="lora-rf-telemetry-link-ground-station-verification">LoRa RF Telemetry Link &amp; Ground Station Verification</h2>
-<p>The avionics system features long-range digital telemetry enabling real-time flight monitoring, apogee confirmation, GPS tracking, and recovery beaconing.</p>
-<h3 id="rf-modulation-architecture">RF Modulation &amp; Architecture</h3>
-<table>
-<thead>
-<tr>
-<th>Parameter</th>
-<th>Operational Setting</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Carrier Frequency</strong></td>
-<td><code>868.000 MHz</code> (HF Band, matched across payload and ground station)</td>
-</tr>
-<tr>
-<td><strong>Modulation</strong></td>
-<td>LoRa (Bandwidth: <code>125.0 kHz</code>, Spreading Factor: <code>SF7</code>, Coding Rate: <code>4/5</code>)</td>
-</tr>
-<tr>
-<td><strong>Sync Word</strong></td>
-<td><code>0x12</code> (MeshCore / RadioLib standard)</td>
-</tr>
-<tr>
-<td><strong>Preamble Length</strong></td>
-<td><code>16 symbols</code> with hardware CRC enabled</td>
-</tr>
-<tr>
-<td><strong>Oscillator Stability</strong></td>
-<td>TCXO (Temperature Compensated Crystal Oscillator) enabled on both nodes (1.6V on SX1262 DIO3)</td>
-</tr>
-<tr>
-<td><strong>Ground Receiver</strong></td>
-<td>Waveshare USB-to-LoRa-HF (TCXO) dongle with GD32F103 MCU running custom KISS TNC firmware</td>
-</tr>
-</tbody>
-</table>
-<h3 id="hardware-verification-benchmark-results">Hardware Verification &amp; Benchmark Results</h3>
-<p>Over-the-air communication was validated in live bidirectional tests between the rocket payload and the Waveshare ground station receiver:</p>
-<ul>
-<li><strong>Packet Loss:</strong> <strong>0.00%</strong> (50/50 consecutive downlink telemetry packets captured; 10/10 bidirectional ping-pong frames verified).</li>
-<li><strong>Round-Trip Turnaround (RTT):</strong> <strong>216 ms – 226 ms</strong> average full-duplex ping-pong latency.</li>
-<li><strong>Signal Quality:</strong> RSSI of <strong>−40.5 dBm</strong> with SNR of <strong>+12.6 dB</strong> (&gt; 20 dB above the SX1262 SF7 demodulation limit), proving a clear link with zero symbol slippage.</li>
-<li><strong>Effective Data Rate:</strong> ~5.47 kbps physical over-the-air bitrate; supports flight telemetry streaming at 2 to 5 Hz.</li>
-</ul>
-<h3 id="quick-guide-flashing-operating-the-waveshare-usb-to-lora-adapter">Quick Guide: Flashing &amp; Operating the Waveshare USB-to-LoRa Adapter</h3>
-<p>To interface the <strong><a href="https://www.waveshare.com/wiki/USB-TO-LoRa-HF">Waveshare USB-to-LoRa-HF</a></strong> adapter with the Rocket BlackBox payload, the stock AT-command firmware must be replaced with the open-source <strong><a href="https://github.com/neohiro/meshcore-waveshare-usb-lora">MeshCore KISS TNC firmware</a></strong>. This gives direct byte-level RF control, standard KISS framing, and low-latency packet streaming via USB serial.</p>
-<h4 id="useful-references-repositories">Useful References &amp; Repositories</h4>
-<ul>
-<li><strong>Firmware Repository:</strong> <a href="https://github.com/neohiro/meshcore-waveshare-usb-lora">neohiro/meshcore-waveshare-usb-lora</a></li>
-<li><strong>Waveshare Hardware Wiki:</strong> <a href="https://www.waveshare.com/wiki/USB-TO-LoRa-HF">Waveshare USB-to-LoRa-HF Product Documentation</a></li>
-<li><strong>Flashing Tool:</strong> <a href="https://pyocd.io/">pyOCD Python SWD Debugger</a> or <a href="https://openocd.org/">OpenOCD</a></li>
-<li><strong>Payload Radio Library:</strong> <a href="https://github.com/jgromes/RadioLib">jgromes/RadioLib</a></li>
-</ul>
-<h4 id="step-1-hardware-connections-st-link-v2-swd">Step 1: Hardware Connections (ST-Link V2 SWD)</h4>
-<p>Open the plastic casing of the Waveshare dongle to access the 4-pin SWD programming header on the PCB:
-The bottom cover seems to be stuck with the PCB so I didnt remove that.</p>
-<p><img alt="Waveshare USB-to-LoRa-HF SWD Pinout and ST-Link V2 Connection" src="assets/waveshare-usb-lora-custom.jpg" /></p>
-<h4 id="step-2-compile-firmware-with-tcxo-enabled">Step 2: Compile Firmware with TCXO Enabled</h4>
-<p>Clone the <a href="https://github.com/neohiro/meshcore-waveshare-usb-lora">meshcore-waveshare-usb-lora</a> repository with submodules:</p>
-<pre><code class="language-bash">git clone --recurse-submodules https://github.com/neohiro/meshcore-waveshare-usb-lora.git
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Rocket BLACKBOX - Avionics & Flight Data Recorder</title>
+        <!-- GitHub Pages / Primer Light CSS (Locked to Light Mode) -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css"
+        />
+        <style>
+            :root {
+                color-scheme: light;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
+                    Arial, sans-serif;
+                background-color: #ffffff !important;
+                color: #24292f !important;
+                color-scheme: light !important;
+            }
+            .container-lg {
+                max-width: 1012px;
+                margin-right: auto;
+                margin-left: auto;
+            }
+            .px-3 {
+                padding-right: 16px !important;
+                padding-left: 16px !important;
+            }
+            .my-5 {
+                margin-top: 32px !important;
+                margin-bottom: 32px !important;
+            }
+            .markdown-body {
+                font-size: 16px;
+                line-height: 1.5;
+                word-wrap: break-word;
+                background-color: #ffffff !important;
+                color: #24292f !important;
+                color-scheme: light !important;
+            }
+            /* Responsive image constraint */
+            .markdown-body img {
+                max-height: 400px;
+                max-width: 100%;
+                width: auto;
+                height: auto;
+                object-fit: contain;
+                display: block;
+                margin: 12px 0 16px 0;
+                border: 1px solid #d0d7de;
+                border-radius: 6px;
+            }
+            /* Dashboard Banner CTA */
+            .dashboard-banner {
+                background: linear-gradient(135deg, #0969da 0%, #054da7 100%);
+                color: #ffffff !important;
+                padding: 16px 20px;
+                border-radius: 8px;
+                margin-bottom: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                box-shadow: 0 4px 12px rgba(9, 105, 218, 0.2);
+            }
+            .dashboard-banner a.cta-btn {
+                background-color: #ffffff;
+                color: #0969da !important;
+                font-weight: 600;
+                text-decoration: none;
+                padding: 8px 18px;
+                border-radius: 6px;
+                white-space: nowrap;
+                transition:
+                    transform 0.15s ease,
+                    background-color 0.15s ease;
+            }
+            .dashboard-banner a.cta-btn:hover {
+                background-color: #f6f8fa;
+                transform: translateY(-1px);
+            }
+            /* Callout styling */
+            .markdown-body blockquote {
+                border-left: 4px solid #0969da;
+                background-color: #f6f8fa;
+                padding: 12px 16px;
+                border-radius: 0 6px 6px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container-lg px-3 my-5 markdown-body">
+            <div class="dashboard-banner">
+                <div>
+                    <div style="font-size: 1.1rem; font-weight: 700">
+                        🚀 Live Ground Station Telemetry Dashboard
+                    </div>
+                    <div style="font-size: 0.9rem; opacity: 0.95">
+                        Direct Web Serial connection for LoRa ground receiver
+                        and flight payload
+                    </div>
+                </div>
+                <a href="/dashboard/" class="cta-btn"
+                    >Launch Dashboard &rarr;</a
+                >
+            </div>
+            <h1>
+                <a href="/" style="text-decoration: none; color: inherit"
+                    >Rocket BLACKBOX — Avionics &amp; Flight Data Recorder</a
+                >
+            </h1>
+            <p>
+                <strong>Rocket BLACKBOX</strong> is an open-source avionics and
+                environmental flight data recorder (FDR) designed for model
+                rocketry and sounding rocket payloads.
+            </p>
+            <p>
+                Built around the <strong>RAK3112</strong> module (Espressif
+                ESP32-S3 + Semtech SX1262 LoRa), the board carries a
+                multi-sensor array across two independent I2C buses, a 4-bit
+                SDMMC slot for high-rate flight logging, multi-constellation
+                GNSS with a 1PPS hardware timing line, long-range digital
+                telemetry, and a push-button soft-latch power circuit with USB
+                battery management.
+            </p>
+            <h3 id="source-files-rambros3drocket_blackbox">
+                Source files:
+                <a href="https://github.com/rambros3d/Rocket_BlackBox"
+                    >rambros3d/Rocket_BlackBox</a
+                >
+            </h3>
+            <blockquote>
+                <p>
+                    [!TIP]
+                    <strong>🚀 Live Ground Station Telemetry Dashboard</strong>:
+                    Access live telemetry, 3D attitude, and maps at
+                    <strong
+                        ><a href="/dashboard/"
+                            >Launch Telemetry Dashboard</a
+                        ></strong
+                    >
+                    (supports Web Serial connections to the Waveshare LoRa
+                    receiver and USB payload).
+                </p>
+            </blockquote>
+            <ul>
+                <li>
+                    Diagnostic firmware:
+                    <a
+                        href="https://github.com/rambros3d/Rocket_BlackBox/tree/main/test_firmware"
+                        ><code>test_firmware</code></a
+                    >
+                </li>
+                <li>
+                    Flight telemetry firmware:
+                    <a
+                        href="https://github.com/rambros3d/Rocket_BlackBox/tree/main/flight_firmware"
+                        ><code>flight_firmware</code></a
+                    >
+                </li>
+                <li>
+                    Telemetry Dashboard:
+                    <a href="/dashboard/"><code>/dashboard/</code></a>
+                </li>
+                <li>
+                    3D Model:
+                    <a href="https://a360.co/47nZXGg"><code>fusion360</code></a>
+                </li>
+                <li>
+                    PCB:
+                    <a href="https://oshwlab.com/shreeramlive/project_dmtpicmk"
+                        ><code>oshwlab</code></a
+                    >
+                </li>
+            </ul>
+            <hr />
+            <h2 id="mission-dsrslv-sinsme-foundation">
+                Mission: DSRSLV (SINSME Foundation)
+            </h2>
+            <p>
+                Rocket BlackBox is developed for the
+                <strong>DSRSLV</strong> sounding rocket initiative, spearheaded
+                by the
+                <strong
+                    ><a href="https://www.sinsmefoundation.org"
+                        >SINSME Foundation</a
+                    ></strong
+                >.
+            </p>
+            <p>
+                The <strong>DSRSLV Phase 2 (P2)</strong> mission aims for an
+                apogee of approximately 5 km, carrying student atmospheric
+                payloads and flight instrumentation to foster hands-on space
+                science and aerospace education.
+            </p>
+            <p>
+                <strong>Mission Details:</strong>
+                <a href="https://www.sinsmefoundation.org/general-7-1"
+                    >SINSME Foundation DSRSLV Project</a
+                >
+            </p>
+            <hr />
+            <h2 id="sensor-data-measurement-capabilities">
+                Sensor Data &amp; Measurement Capabilities
+            </h2>
+            <p>
+                Sensors are split across two I2C buses, an internal SPI bus for
+                LoRa RF telemetry, and a dedicated GNSS UART.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Primary Role</th>
+                        <th>Data Types</th>
+                        <th>Hardware Interface</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <strong>Barometric Altimeter</strong><br /><small
+                                >MS5607</small
+                            >
+                        </td>
+                        <td>
+                            <strong>Barometric Pressure:</strong> 10 to 1200 hPa
+                            (Resolution: 0.01 hPa / ~20 cm altitude, 24-bit
+                            $\Delta\Sigma$ ADC, factory PROM calibration with
+                            CRC4 checksum)<br /><strong>Temperature:</strong>
+                            −40°C to +85°C (Resolution: &lt; 0.01°C, Accuracy:
+                            ±1.0°C)
+                        </td>
+                        <td>I2C Bus 1<br /><code>0x77</code></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>CO2, Temperature &amp; Humidity</strong
+                            ><br /><small>Sensirion SCD40</small>
+                        </td>
+                        <td>
+                            <strong>CO2 Concentration:</strong> 400 to 5000 ppm
+                            (Resolution: 1 ppm, Accuracy: ±(40 ppm + 5% of
+                            reading))<br /><strong>Temperature:</strong> −10°C
+                            to +60°C (Resolution: 0.01°C, 16-bit, Accuracy:
+                            ±0.8°C)<br /><strong>Relative Humidity:</strong> 0%
+                            to 100% RH (Resolution: 0.01% RH, 16-bit, Accuracy:
+                            ±6% RH)
+                        </td>
+                        <td>I2C Bus 1<br /><code>0x62</code></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>VOC &amp; NOx Gas Index</strong><br /><small
+                                >Sensirion SGP41</small
+                            >
+                        </td>
+                        <td>
+                            <strong>VOC Gas Index:</strong> 1 to 500 (16-bit raw
+                            ticks, limit &lt; 1 to 1000 ppm VOC)<br /><strong
+                                >NOx Gas Index:</strong
+                            >
+                            1 to 500 (16-bit raw ticks, detection limit 0.05 to
+                            10 ppm NO2)<br /><strong>Compensation:</strong>
+                            Accepts external humidity and temperature for
+                            baseline drift correction
+                        </td>
+                        <td>I2C Bus 1<br /><code>0x59</code></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>Ambient &amp; Solar Illuminance</strong
+                            ><br /><small>TSL25911FN</small>
+                        </td>
+                        <td>
+                            <strong>Dual Optical Channels:</strong> CH0 Full
+                            Spectrum (300–1100 nm) &amp; CH1 Infrared (500–1100
+                            nm)<br /><strong>Dynamic Range:</strong>
+                            600,000,000:1 (188 µlux up to 88,000 lux, 16-bit
+                            ADC)<br /><strong>Programmable Gain:</strong> 1×,
+                            25×, 428×, 9876× with 100–600 ms integration timing
+                        </td>
+                        <td>
+                            I2C Bus 1<br /><code>0x29</code> (Device ID:
+                            <code>0x50</code>)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>UV Index &amp; Ambient Light</strong
+                            ><br /><small>LTR-390UV-01</small>
+                        </td>
+                        <td>
+                            <strong>Ambient Light (ALS):</strong> 0.01 to 64,000
+                            lux (spectral peak 550 nm, photopic human eye
+                            response)<br /><strong>UV Spectrum:</strong> UVA /
+                            UVB (280–400 nm), 13 to 20-bit resolution, UV Index
+                            0 to 12+
+                        </td>
+                        <td>I2C Bus 1<br /><code>0x53</code></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>9-DOF IMU &amp; Attitude</strong
+                            ><br /><small>Bosch BNO055</small>
+                        </td>
+                        <td>
+                            <strong>Accelerometer:</strong> ±2g to ±16g (14-bit,
+                            3 axes)<br /><strong>Gyroscope:</strong> ±125°/s to
+                            ±2000°/s (16-bit, 3 axes)<br /><strong
+                                >Magnetometer:</strong
+                            >
+                            ±1300 µT (X, Y), ±2500 µT (Z) (16-bit, 0.3 µT
+                            resolution, 3 axes)<br /><strong
+                                >Sensor Fusion:</strong
+                            >
+                            On-chip ARM Cortex-M0 coprocessor outputs
+                            quaternions (w, x, y, z) and Euler angles (0–360° @
+                            0.0625°)
+                        </td>
+                        <td>I2C Bus 2<br /><code>0x28</code></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>GNSS &amp; Time Sync</strong><br /><small
+                                >Beitian BE-166</small
+                            >
+                        </td>
+                        <td>
+                            <strong>Position &amp; Velocity:</strong> GPS,
+                            Galileo, BeiDou, QZSS - 2.0 m CEP horizontal, 0.05
+                            m/s velocity, up to 50,000 m altitude<br /><strong
+                                >1PPS Timing:</strong
+                            >
+                            Hardware pulse, 20 ns RMS
+                        </td>
+                        <td>
+                            UART (115200 baud)<br />Hardware 1PPS line (<code
+                                >GPIO 38</code
+                            >)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>Auxiliary Environmental</strong><br /><small
+                                >Bosch BME680</small
+                            >
+                        </td>
+                        <td>
+                            <strong>Barometric Pressure:</strong> 300 to 1100
+                            hPa (Resolution: 0.18 Pa / ~17 cm, Accuracy: ±0.12
+                            hPa)<br /><strong
+                                >Temperature &amp; Humidity:</strong
+                            >
+                            −40°C to +85°C (Resolution: 0.01°C), 0% to 100% RH
+                            (Resolution: 0.008% RH)<br /><strong
+                                >Gas Resistance:</strong
+                            >
+                            10 Ω to 60 MΩ MOX sensor for bVOC detection
+                        </td>
+                        <td>I2C Bus 1<br /><code>0x76</code></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>LoRa RF Telemetry &amp; Link</strong
+                            ><br /><small>Semtech SX1262 (RAK3112)</small>
+                        </td>
+                        <td>
+                            <strong>Frequency:</strong> 868.000 MHz (HF Band)<br /><strong
+                                >Modulation:</strong
+                            >
+                            LoRa (BW: 125 kHz, SF7, CR 4/5, Sync:
+                            <code>0x12</code>, 16 Preamble, CRC on)<br /><strong
+                                >RF Performance:</strong
+                            >
+                            +22 dBm max TX power, −125 dBm sensitivity, DIO2 RF
+                            switch, TCXO 1.6V oscillator<br /><strong
+                                >Data Rate &amp; Latency:</strong
+                            >
+                            ~5.47 kbps over-the-air, ~226 ms RTT bidirectional
+                            ping-pong, 0.0% packet loss tested
+                        </td>
+                        <td>
+                            Internal SPI Bus<br />(SCK=5, MISO=3, MOSI=6, NSS=7,
+                            RST=8, BUSY=48, DIO1=47, ANT_SW=4)
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <hr />
+            <h2 id="circuit-hardware-subsystems">
+                Circuit &amp; Hardware Subsystems
+            </h2>
+            <p>
+                The schematic is organized as one modular block per subsystem.
+                Environmental sensors share one I2C bus, the IMU has its own
+                dedicated I2C bus, GNSS uses UART plus a hardware timing line,
+                and logging uses 4-bit SDMMC.
+            </p>
+            <h3 id="rak3112-mcu-lora-module">RAK3112 MCU + LoRa Module</h3>
+            <p><img alt="RAK3112 module" src="assets/RAK3112-8-SM-I.png" /></p>
+            <p>
+                Central controller combining an ESP32-S3 dual-core
+                microcontroller with an integrated Semtech SX1262 LoRa
+                transceiver. It hosts the USB connection, both I2C buses, the
+                GNSS UART, the SDMMC interface, and the RF telemetry frontend.
+                The internal SX1262 links via internal SPI with TCXO frequency
+                stabilization powered at 1.6V (DIO3) and an active RF switch
+                powered by GPIO 4. Dedicated buttons handle boot-mode entry and
+                reset, a resistor divider feeds battery voltage to the ADC for
+                monitoring, and separate lines hold power on, sense the power
+                button, and drive the status LED.
+            </p>
+            <p>
+                <strong>Ground Station Integration:</strong> The payload links
+                wirelessly to a compact
+                <strong>Waveshare USB-to-LoRa-HF (TCXO)</strong> dongle flashed
+                with custom KISS TNC modem firmware (GD32F103 MCU). Over-the-air
+                communication operates at 868.000 MHz with full-duplex CSMA
+                bypass for rapid packet turnaround (~226 ms round-trip
+                ping-pong, 0.0% packet loss).
+            </p>
+            <h3 id="charger-power-control-circuit">
+                Charger &amp; Power Control Circuit
+            </h3>
+            <p><img alt="BQ24075 charger IC" src="assets/BQ24075RGTR.png" /></p>
+            <p>
+                Built around the BQ24075 LiPo charger with power-path
+                management, so the board runs from USB when present and
+                seamlessly falls back to battery. Charge and power-good LEDs
+                show charger state. A dual-MOSFET push-button soft-latch holds
+                the charger output enabled after the button is released; the MCU
+                keeps itself powered through a hold line and can shut the board
+                down by releasing it. A manual cutoff switch fully disconnects
+                the battery, and a divided-down tap of the button lets the MCU
+                detect presses.
+            </p>
+            <h3 id="voltage-regulator">Voltage Regulator</h3>
+            <p>
+                <img
+                    alt="AIC1221 3.3 V LDO regulator"
+                    src="assets/AIC1221-33GY3TR.png"
+                />
+            </p>
+            <p>
+                A 3.3 V LDO that powers the MCU, sensors, GNSS, and SD card from
+                the charger output, keeping noisy supply switching away from the
+                analog sensor rails.
+            </p>
+            <h3 id="sd-card">SD Card</h3>
+            <p>
+                <img alt="MicroSD card connector" src="assets/472192001.png" />
+            </p>
+            <p>
+                MicroSD slot wired in 4-bit SDMMC mode for high-speed flight
+                logging, with pull-ups on clock, command, and all four data
+                lines.
+            </p>
+            <h3 id="gnss-receiver">GNSS Receiver</h3>
+            <p>
+                <img alt="Beitian BE-166 GNSS module" src="assets/BE-I66.png" />
+            </p>
+            <p>
+                Beitian multi-constellation receiver with integrated antenna. It
+                streams position over UART and provides a hardware
+                1-pulse-per-second output for precise time synchronization. Pin
+                headers break out the serial and timing signals.
+            </p>
+            <h3 id="9-axis-imu-sensor">9-Axis IMU Sensor</h3>
+            <p><img alt="BNO055 9-axis IMU" src="assets/BNO055.png" /></p>
+            <p>
+                BNO055 with on-chip sensor fusion outputting absolute
+                orientation as quaternions and Euler angles. It sits alone on
+                the second I2C bus to avoid address conflicts with the
+                environmental sensors, with a separate interrupt line for motion
+                and data-ready events.
+            </p>
+            <h3 id="humidity-temperature-pressure-sensor">
+                Humidity, Temperature &amp; Pressure Sensor
+            </h3>
+            <p>
+                <img
+                    alt="BME680 environmental sensor"
+                    src="assets/BME680.png"
+                />
+            </p>
+            <p>
+                BME680 auxiliary environmental sensor for pressure, temperature,
+                humidity, and gas resistance.
+            </p>
+            <h3 id="altitude-sensor">Altitude Sensor</h3>
+            <p>
+                <img
+                    alt="MS5607 barometric pressure sensor"
+                    src="assets/MS560702.png"
+                />
+            </p>
+            <p>
+                MS5607 barometric pressure and temperature sensor used as the
+                primary altimeter, strapped for I2C operation.
+            </p>
+            <h3 id="co2-sensor">CO2 Sensor</h3>
+            <p><img alt="SCD40 CO2 sensor" src="assets/SCD40-D-R1.png" /></p>
+            <p>
+                SCD40 photoacoustic CO2 sensor, also reporting temperature and
+                relative humidity. Its core and heater supplies are tied
+                together for 3.3 V operation as recommended for this use.
+            </p>
+            <h3 id="voc-nox-sensor">VOC &amp; NOx Sensor</h3>
+            <p><img alt="SGP41 gas sensor" src="assets/SGP41-D-R4.png" /></p>
+            <p>
+                SGP41 metal-oxide gas sensor reporting VOC and NOx indices.
+                Requires temperature and humidity compensation from the other
+                sensors to correct baseline drift.
+            </p>
+            <h3 id="ambient-light-sensor">Ambient Light Sensor</h3>
+            <p>
+                <img
+                    alt="TSL25911FN ambient light sensor"
+                    src="assets/TSL25911FN.png"
+                />
+            </p>
+            <p>
+                TSL25911FN dual-diode sensor measuring full-spectrum and
+                infrared light separately so visible illuminance can be derived.
+            </p>
+            <h3 id="uv-sensor">UV Sensor</h3>
+            <p><img alt="LTR-390 UV sensor" src="assets/LTR-390UV-01.png" /></p>
+            <p>
+                LTR-390 sensor measuring UVA/UVB for UV index plus ambient
+                visible light, with an interrupt output for threshold events.
+            </p>
+            <hr />
+            <h2 id="pin-mapping">Pin Mapping</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>MCU Pin</th>
+                        <th>Sensor Pin</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Power &amp; Housekeeping</strong></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 40</strong></td>
+                        <td><code>PWR_EN</code></td>
+                        <td>
+                            Power hold latch output. Driven HIGH by MCU to
+                            maintain DC-DC / LDO power alive; pulled LOW to shut
+                            down.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 39</strong></td>
+                        <td><code>PUSH_SW</code></td>
+                        <td>
+                            Push-button state detection input. Reads user button
+                            clicks after power-on.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 9</strong></td>
+                        <td><code>VADC</code></td>
+                        <td>
+                            Battery voltage monitor (ADC1 Channel 8, 1/2
+                            resistor divider 5.1 kΩ / 5.1 kΩ).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 45</strong></td>
+                        <td><code>LED</code></td>
+                        <td>Active-high status and heartbeat LED indicator.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong
+                                >I2C Bus 1 - Environmental &amp; Optical
+                                Sensors</strong
+                            >
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 10</strong></td>
+                        <td><code>SDA1</code></td>
+                        <td>
+                            Environmental I2C Bus 1 serial data line (connected
+                            to MS5607, SCD40, SGP41, TSL25911FN, LTR-390, BME680
+                            with 2.2 kΩ pull-up to 3.3V).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 11</strong></td>
+                        <td><code>SCL1</code></td>
+                        <td>
+                            Environmental I2C Bus 1 serial clock line (connected
+                            to MS5607, SCD40, SGP41, TSL25911FN, LTR-390, BME680
+                            with 2.2 kΩ pull-up to 3.3V).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong
+                                >I2C Bus 2 - Inertial Navigation
+                                (BNO055)</strong
+                            >
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 2</strong></td>
+                        <td><code>SDA2</code></td>
+                        <td>
+                            Inertial navigation I2C Bus 2 serial data line for
+                            BNO055 (with 2.2 kΩ pull-up to 3.3V).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 1</strong></td>
+                        <td><code>SCL2</code></td>
+                        <td>
+                            Inertial navigation I2C Bus 2 serial clock line for
+                            BNO055 (with 2.2 kΩ pull-up to 3.3V).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 4</strong></td>
+                        <td><code>INT</code></td>
+                        <td>
+                            Hardware motion detection and data-ready interrupt
+                            line from BNO055.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GNSS - Beitian BE-166</strong></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 42</strong></td>
+                        <td><code>GNSS_TXD</code></td>
+                        <td>
+                            UART receiver input (MCU RX) listening to
+                            multi-constellation NMEA and UBX stream at 115200
+                            baud from BE-166.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 41</strong></td>
+                        <td><code>GNSS_RXD</code></td>
+                        <td>
+                            UART transmitter output (MCU TX) driving
+                            bidirectional UBX/NMEA configuration and query
+                            commands to BE-166.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 38</strong></td>
+                        <td><code>GNSS_IPPS</code></td>
+                        <td>
+                            Microsecond-accurate hardware 1 pulse-per-second
+                            (1PPS) synchronization interrupt line from BE-166.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>MicroSD - 4-Bit SDMMC Interface</strong>
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 14</strong></td>
+                        <td><code>CLK</code></td>
+                        <td>High-speed 4-bit parallel SDMMC clock line.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 21</strong></td>
+                        <td><code>CMD</code></td>
+                        <td>
+                            High-speed 4-bit parallel SDMMC command and response
+                            line (with 10 kΩ pull-up to 3.3V).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 13</strong></td>
+                        <td><code>DAT0</code></td>
+                        <td>
+                            High-speed 4-bit parallel SDMMC data line bit 0
+                            (with 10 kΩ pull-up to 3.3V).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 12</strong></td>
+                        <td><code>DAT1</code></td>
+                        <td>
+                            High-speed 4-bit parallel SDMMC data line bit 1
+                            (with 10 kΩ pull-up to 3.3V).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 17</strong></td>
+                        <td><code>DAT2</code></td>
+                        <td>
+                            High-speed 4-bit parallel SDMMC data line bit 2
+                            (with 10 kΩ pull-up to 3.3V).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 18</strong></td>
+                        <td><code>DAT3</code> / <code>CD</code></td>
+                        <td>
+                            High-speed 4-bit parallel SDMMC data line bit 3 /
+                            card detection (with 10 kΩ pull-up to 3.3V).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong
+                                >LoRa Transceiver - Semtech SX1262 (RAK3112
+                                Internal)</strong
+                            >
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 5</strong></td>
+                        <td><code>LORA_SCK</code></td>
+                        <td>Internal SPI clock line for SX1262.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 3</strong></td>
+                        <td><code>LORA_MISO</code></td>
+                        <td>
+                            Internal SPI Master-In-Slave-Out line for SX1262.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 6</strong></td>
+                        <td><code>LORA_MOSI</code></td>
+                        <td>
+                            Internal SPI Master-Out-Slave-In line for SX1262.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 7</strong></td>
+                        <td><code>LORA_NSS</code></td>
+                        <td>
+                            Internal SPI Slave Select (Active Low) for SX1262.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 8</strong></td>
+                        <td><code>LORA_RST</code></td>
+                        <td>Hardware active-low reset line for SX1262.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 48</strong></td>
+                        <td><code>LORA_BUSY</code></td>
+                        <td>
+                            Hardware BUSY status line from SX1262 (monitored
+                            prior to SPI commands).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 47</strong></td>
+                        <td><code>LORA_DIO1</code></td>
+                        <td>
+                            Multi-purpose packet RX / TX done interrupt line
+                            from SX1262.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPIO 4</strong></td>
+                        <td><code>LORA_ANT_SW</code></td>
+                        <td>
+                            RF Antenna Switch power gate (driven HIGH to
+                            activate RF frontend).
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <hr />
+            <h2 id="workarounds">Workarounds</h2>
+            <p>
+                During hardware bring-up and bench testing of the Rev 1.0 PCB,
+                the onboard Bosch ICs did not work:
+            </p>
+            <ul>
+                <li>
+                    <strong>Bosch BNO055 (9-DOF IMU):</strong> The
+                    <code>nRESET</code> pin (Pin 11) was left unconnected /
+                    floating as per the datasheet. Maybe the internal weak
+                    pull-up is insufficient to overcome the floating state, the
+                    internal processor failed to respond (NACK) over I2C.
+                </li>
+                <li>
+                    <strong
+                        >Bosch BME680 (Auxiliary Environmental Sensor):</strong
+                    >
+                    This one suffered a hard physical short between the SDA1
+                    line and GND, requiring physical isolation via removal of
+                    its 0Ω series resistor.
+                </li>
+            </ul>
+            <h3 id="external-imu-workaround">External IMU Workaround</h3>
+            <ul>
+                <li>
+                    To bypass the onboard IC issues and restore full 9-DOF
+                    inertial and attitude sensing for flight, an
+                    <strong>external 7semi BNO055 module</strong> is connected
+                    to dedicated I2C Bus 2 (<code>GPIO 2</code>,
+                    <code>GPIO 1</code>). Bus 2 is clocked strictly at
+                    <strong>50 kHz</strong> with a 100 ms timeout to reliably
+                    accommodate the BNO055 internal Cortex-M0 clock stretching
+                    during NDOF fusion cycles.
+                </li>
+                <li>
+                    Environmental data acquisition is handled by the primary
+                    MS5607 altimeter, Sensirion SCD40, and SGP41 sensors.
+                </li>
+            </ul>
+            <hr />
+            <h2 id="lora-rf-telemetry-link-ground-station-verification">
+                LoRa RF Telemetry Link &amp; Ground Station Verification
+            </h2>
+            <p>
+                The avionics system features long-range digital telemetry
+                enabling real-time flight monitoring, apogee confirmation, GPS
+                tracking, and recovery beaconing.
+            </p>
+            <h3 id="rf-modulation-architecture">
+                RF Modulation &amp; Architecture
+            </h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Operational Setting</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Carrier Frequency</strong></td>
+                        <td>
+                            <code>868.000 MHz</code> (HF Band, matched across
+                            payload and ground station)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Modulation</strong></td>
+                        <td>
+                            LoRa (Bandwidth: <code>125.0 kHz</code>, Spreading
+                            Factor: <code>SF7</code>, Coding Rate:
+                            <code>4/5</code>)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sync Word</strong></td>
+                        <td>
+                            <code>0x12</code> (MeshCore / RadioLib standard)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Preamble Length</strong></td>
+                        <td>
+                            <code>16 symbols</code> with hardware CRC enabled
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Oscillator Stability</strong></td>
+                        <td>
+                            TCXO (Temperature Compensated Crystal Oscillator)
+                            enabled on both nodes (1.6V on SX1262 DIO3)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ground Receiver</strong></td>
+                        <td>
+                            Waveshare USB-to-LoRa-HF (TCXO) dongle with GD32F103
+                            MCU running custom KISS TNC firmware
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <h3 id="hardware-verification-benchmark-results">
+                Hardware Verification &amp; Benchmark Results
+            </h3>
+            <p>
+                Over-the-air communication was validated in live bidirectional
+                tests between the rocket payload and the Waveshare ground
+                station receiver:
+            </p>
+            <ul>
+                <li>
+                    <strong>Packet Loss:</strong> <strong>0.00%</strong> (50/50
+                    consecutive downlink telemetry packets captured; 10/10
+                    bidirectional ping-pong frames verified).
+                </li>
+                <li>
+                    <strong>Round-Trip Turnaround (RTT):</strong>
+                    <strong>216 ms – 226 ms</strong> average full-duplex
+                    ping-pong latency.
+                </li>
+                <li>
+                    <strong>Signal Quality:</strong> RSSI of
+                    <strong>−40.5 dBm</strong> with SNR of
+                    <strong>+12.6 dB</strong> (&gt; 20 dB above the SX1262 SF7
+                    demodulation limit), proving a clear link with zero symbol
+                    slippage.
+                </li>
+                <li>
+                    <strong>Effective Data Rate:</strong> ~5.47 kbps physical
+                    over-the-air bitrate; supports flight telemetry streaming at
+                    2 to 5 Hz.
+                </li>
+            </ul>
+            <h3
+                id="quick-guide-flashing-operating-the-waveshare-usb-to-lora-adapter"
+            >
+                Quick Guide: Flashing &amp; Operating the Waveshare USB-to-LoRa
+                Adapter
+            </h3>
+            <p>
+                To interface the
+                <strong
+                    ><a href="https://www.waveshare.com/wiki/USB-TO-LoRa-HF"
+                        >Waveshare USB-to-LoRa-HF</a
+                    ></strong
+                >
+                adapter with the Rocket BlackBox payload, the stock AT-command
+                firmware must be replaced with the open-source
+                <strong
+                    ><a
+                        href="https://github.com/neohiro/meshcore-waveshare-usb-lora"
+                        >MeshCore KISS TNC firmware</a
+                    ></strong
+                >. This gives direct byte-level RF control, standard KISS
+                framing, and low-latency packet streaming via USB serial.
+            </p>
+            <h4 id="useful-references-repositories">
+                Useful References &amp; Repositories
+            </h4>
+            <ul>
+                <li>
+                    <strong>Firmware Repository:</strong>
+                    <a
+                        href="https://github.com/neohiro/meshcore-waveshare-usb-lora"
+                        >neohiro/meshcore-waveshare-usb-lora</a
+                    >
+                </li>
+                <li>
+                    <strong>Waveshare Hardware Wiki:</strong>
+                    <a href="https://www.waveshare.com/wiki/USB-TO-LoRa-HF"
+                        >Waveshare USB-to-LoRa-HF Product Documentation</a
+                    >
+                </li>
+                <li>
+                    <strong>Flashing Tool:</strong>
+                    <a href="https://pyocd.io/">pyOCD Python SWD Debugger</a> or
+                    <a href="https://openocd.org/">OpenOCD</a>
+                </li>
+                <li>
+                    <strong>Payload Radio Library:</strong>
+                    <a href="https://github.com/jgromes/RadioLib"
+                        >jgromes/RadioLib</a
+                    >
+                </li>
+            </ul>
+            <h4 id="step-1-hardware-connections-st-link-v2-swd">
+                Step 1: Hardware Connections (ST-Link V2 SWD)
+            </h4>
+            <p>
+                Open the plastic casing of the Waveshare dongle to access the
+                4-pin SWD programming header on the PCB: The bottom cover seems
+                to be stuck with the PCB so I didnt remove that.
+            </p>
+            <p>
+                <img
+                    alt="Waveshare USB-to-LoRa-HF SWD Pinout and ST-Link V2 Connection"
+                    src="assets/waveshare-usb-lora-custom.jpg"
+                />
+            </p>
+            <h4 id="step-2-compile-firmware-with-tcxo-enabled">
+                Step 2: Compile Firmware with TCXO Enabled
+            </h4>
+            <p>
+                Clone the
+                <a href="https://github.com/neohiro/meshcore-waveshare-usb-lora"
+                    >meshcore-waveshare-usb-lora</a
+                >
+                repository with submodules:
+            </p>
+            <pre><code class="language-bash">git clone --recurse-submodules https://github.com/neohiro/meshcore-waveshare-usb-lora.git
 cd meshcore-waveshare-usb-lora/firmware
 </code></pre>
-<p>Build the binary with the <code>WITH_TCXO=1</code> build flag to activate MCU pin <code>PD1</code> which powers the SX1262 TCXO crystal:</p>
-<pre><code class="language-bash">make WITH_TCXO=1 clean
+            <p>
+                Build the binary with the <code>WITH_TCXO=1</code> build flag to
+                activate MCU pin <code>PD1</code> which powers the SX1262 TCXO
+                crystal:
+            </p>
+            <pre><code class="language-bash">make WITH_TCXO=1 clean
 make WITH_TCXO=1
 </code></pre>
-<p>This generates <code>firmware.bin</code> linked for flash base address <code>0x08000000</code>.</p>
-<h4 id="step-3-flash-the-gd32f103-mcu">Step 3: Flash the GD32F103 MCU</h4>
-<p>Flash the compiled firmware using <a href="https://pyocd.io/">pyOCD</a> targeting the STM32F103/GD32F103 core:</p>
-<pre><code class="language-bash"># Install pyOCD (if not already installed)
+            <p>
+                This generates <code>firmware.bin</code> linked for flash base
+                address <code>0x08000000</code>.
+            </p>
+            <h4 id="step-3-flash-the-gd32f103-mcu">
+                Step 3: Flash the GD32F103 MCU
+            </h4>
+            <p>
+                Flash the compiled firmware using
+                <a href="https://pyocd.io/">pyOCD</a> targeting the
+                STM32F103/GD32F103 core:
+            </p>
+            <pre><code class="language-bash"># Install pyOCD (if not already installed)
 pip install pyocd
 
 # Probe MCU target via connected ST-Link V2
@@ -481,21 +1037,49 @@ pyocd list
 # Erase and program flash memory at 0x08000000
 pyocd flash -t stm32f103c8 -a 0x08000000 firmware.bin
 </code></pre>
-<p>Disconnect the ST-Link and plug the dongle directly into the host PC's USB port (enumerates as <code>/dev/ttyACM0</code> via the onboard CH343 USB-to-UART bridge).</p>
-<h4 id="step-4-real-time-telemetry-link-testing">Step 4: Real-Time Telemetry &amp; Link Testing</h4>
-<p>Run the telemetry receiver or test scripts from the repository's <code>flight_dashboard/</code> directory:</p>
-<pre><code class="language-bash"># 1. Run live ground telemetry receiver &amp; CSV logger:
+            <p>
+                Disconnect the ST-Link and plug the dongle directly into the
+                host PC's USB port (enumerates as <code>/dev/ttyACM0</code> via
+                the onboard CH343 USB-to-UART bridge).
+            </p>
+            <h4 id="step-4-real-time-telemetry-link-testing">
+                Step 4: Real-Time Telemetry &amp; Link Testing
+            </h4>
+            <p>
+                Run the telemetry receiver or test scripts from the repository's
+                <code>flight_dashboard/</code> directory:
+            </p>
+            <pre><code class="language-bash"># 1. Run live ground telemetry receiver &amp; CSV logger:
 python flight_dashboard/lora_ground_receiver.py --port /dev/ttyACM0 --log flight_log.csv
 
 # 2. Run automated bidirectional ping-pong test against payload:
 python flight_dashboard/test_rf_ping_pong.py
 </code></pre>
-<hr />
-<h2 id="easyeda-educator-program">EasyEDA Educator Program</h2>
-<p><a href="https://easyeda.com/"><img alt="EasyEDA Educator Program" src="assets/easyeda-educator-program.png" /></a></p>
-<p>This project's PCB design, fabrication, and PCBA assembly were generously sponsored by the <strong><a href="https://easyeda.com/">EasyEDA Educator Program</a></strong> and fabricated by <strong><a href="https://jlcpcb.com/">JLCPCB</a></strong>.</p>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js"></script>
-    <script>anchors.add();</script>
-  </body>
+            <hr />
+            <h2 id="easyeda-educator-program">EasyEDA Educator Program</h2>
+            <p>
+                <a href="https://easyeda.com/"
+                    ><img
+                        alt="EasyEDA Educator Program"
+                        src="assets/easyeda-educator-program.png"
+                /></a>
+            </p>
+            <p>
+                This project's PCB design, fabrication, and PCBA assembly were
+                generously sponsored by the
+                <strong
+                    ><a href="https://easyeda.com/"
+                        >EasyEDA Educator Program</a
+                    ></strong
+                >
+                and fabricated by
+                <strong><a href="https://jlcpcb.com/">JLCPCB</a></strong
+                >.
+            </p>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js"></script>
+        <script>
+            anchors.add();
+        </script>
+    </body>
 </html>

@@ -74,6 +74,9 @@ class LinkController {
   private autoConnectTimer: ReturnType<typeof setInterval> | null = null
   private autoConnectListenerAttached = false
   private lastAutoConnectError = 0
+  private rssiPollTimer: ReturnType<typeof setInterval> | null = null
+  private lastPingMs = 0
+  private pingInFlight = false
   busy = false
 
   get isDemo() {
@@ -169,6 +172,9 @@ class LinkController {
         await sleep(350)
         await this.write('i\n')
       }
+      if (mode === 'lora') {
+        this.startRssiPolling()
+      }
     } catch (error) {
       if (!this.port?.readable) {
         await this.disconnect(false)
@@ -181,6 +187,8 @@ class LinkController {
     if (manual) this.userDisconnected = true
     if (this.disconnecting) return
     this.disconnecting = true
+    this.stopRssiPolling()
+    this.pingInFlight = false
 
     try {
       this.keepReading = false
@@ -388,8 +396,10 @@ class LinkController {
           for (const ev of events) {
             if (ev.kind === 'frame') {
               t.ingest(ev.frame)
+              this.maybeBackgroundPing(now)
             } else if (ev.kind === 'fast-frame') {
               t.ingestFast(ev.frame)
+              this.maybeBackgroundPing(now)
             } else if (ev.kind === 'text' && !hasBinaryFrame) {
               t.log('rx', ev.text)
             } else if (ev.kind === 'ack') {
@@ -411,8 +421,12 @@ class LinkController {
           } else if (body[0] === 0xf9 && body.length >= 3) {
             const rssi = (body[2] << 24) >> 24
             const snr = ((body[1] << 24) >> 24) / 4
-            // Current dongle firmware can report invalid positive RSSI.
-            if (rssi < 0) t.applyLinkMetrics(rssi, snr)
+            // Current dongle firmware can report invalid positive RSSI or 0.0 SNR.
+            if (rssi < 0 && snr !== 0) {
+              t.applyLinkMetrics(rssi, snr)
+            } else if (rssi < 0) {
+              t.applyRssi(rssi)
+            }
           }
           const waiter = this.hardwareWaiter
           if (waiter && body[0] === 0xf1) {
@@ -573,6 +587,39 @@ class LinkController {
     }
     useTelemetry.getState().setCommand({ cmd, sentAt: Date.now(), attempts: 3, status: 'failed' })
     t.log('sys', `${label}: no acknowledgement from payload`)
+  }
+
+  private startRssiPolling() {
+    this.stopRssiPolling()
+    this.rssiPollTimer = setInterval(() => {
+      if (this.mode === 'lora' && this.port && !this.busy && !this.pingInFlight && !this.hardwareWaiter) {
+        this.write(encodeKiss(KISS_HARDWARE, Uint8Array.of(0x0d))).catch(() => undefined)
+      }
+    }, 1000)
+  }
+
+  private stopRssiPolling() {
+    if (this.rssiPollTimer) {
+      clearInterval(this.rssiPollTimer)
+      this.rssiPollTimer = null
+    }
+  }
+
+  private maybeBackgroundPing(now: number) {
+    if (this.mode !== 'lora' || this.busy || this.pingInFlight || now - this.lastPingMs < 7000) return
+    this.lastPingMs = now
+    this.pingInFlight = true
+    const packet = encodeCommand(Command.PING)
+    this.write(encodeKiss(KISS_DATA, packet))
+      .then(() => {
+        useTelemetry.getState().noteCommandSent()
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        setTimeout(() => {
+          this.pingInFlight = false
+        }, 1500)
+      })
   }
 }
 

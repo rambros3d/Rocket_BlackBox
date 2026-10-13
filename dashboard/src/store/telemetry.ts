@@ -257,12 +257,13 @@ export const useTelemetry = create<TelemetryState>()((set, get) => ({
   },
 
   applyRssi: (rssi) => {
-    const { live } = get()
+    const { live, view } = get()
     if (!live.latest) return
     const latest = { ...live.latest, link: { ...live.latest.link, rssi } }
     const frames = live.frames.slice()
     frames[frames.length - 1] = latest
-    set({ live: { ...live, latest, frames } })
+    const updated = { ...live, latest, frames }
+    set({ live: updated, ...(view.latest?.t === latest.t ? { view: updated } : {}) })
   },
 
   applyLinkMetrics: (rssi, snr) => {
