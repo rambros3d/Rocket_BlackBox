@@ -171,7 +171,7 @@ void loop() {
                                   ? PowerManager::LedState::Connected
                                   : PowerManager::LedState::Disconnected);
     // Button-hold countdown + power-off logic (change: power-off-button:
-    // 600 ms ON / 120 ms OFF blink from 2 s of hold; latch off at 5 s).
+    // 60 ms ON / 120 ms OFF blink from 2 s of hold; latch off at 5 s).
     PowerManager::updateButtonHold();
     PowerManager::updateLed();
     FlashStorageManager::updateLogger();
