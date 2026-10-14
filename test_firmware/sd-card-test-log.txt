@@ -1,0 +1,59 @@
+[INFO] Opened /dev/ttyACM0 @ 115200
+
+==================================================
+        ROCKET BLACKBOX DIAGNOSTIC CONSOLE        
+==================================================
+Select a diagnostic command:
+  [1] Run Full Subsystem POST (Power-On Self-Test)
+  [2] Toggle Live Sensor Telemetry Stream (1 Hz)
+  [3] Run SDMMC Storage Benchmark (1 MB R/W)
+  [4] Re-scan Dual I2C Buses
+  [5] Query GPS & 1PPS Timing Status
+  [g] Stream Raw BE-166 NMEA Sentences
+  [p] Probe GPS Bidirectional Command Link
+  [6] Query Power & Battery Health
+  [7] Probe BNO055 Electrical Lines & Ping
+  [e] Run BNO055 Edge-Case Recovery Suite
+  [i] Re-initialize BNO055 & Enter NDOF Fusion
+  [8] Query 12MB Flash & USB MSC Storage
+  [9] List Flash Files (/ffat)
+  [d] Dump Latest Flight Log CSV
+  [0] Toggle Flash CSV Flight Logging
+  [r] Remount / Refresh USB MSC Drive
+  [f] Format 12MB Flash Storage Partition
+  [l] Open LoRa RF Transceiver Diagnostic Menu
+  [h] Show this menu
+--------------------------------------------------
+> 
+[INFO] Sending [3] - SDMMC benchmark ...
+
+  [FAIL] Cannot benchmark unmounted SD card.
+
+==================================================
+        ROCKET BLACKBOX DIAGNOSTIC CONSOLE        
+==================================================
+Select a diagnostic command:
+  [1] Run Full Subsystem POST (Power-On Self-Test)
+  [2] Toggle Live Sensor Telemetry Stream (1 Hz)
+  [3] Run SDMMC Storage Benchmark (1 MB R/W)
+  [4] Re-scan Dual I2C Buses
+  [5] Query GPS & 1PPS Timing Status
+  [g] Stream Raw BE-166 NMEA Sentences
+  [p] Probe GPS Bidirectional Command Link
+  [6] Query Power & Battery Health
+  [7] Probe BNO055 Electrical Lines & Ping
+  [e] Run BNO055 Edge-Case Recovery Suite
+  [i] Re-initialize BNO055 & Enter NDOF Fusion
+  [8] Query 12MB Flash & USB MSC Storage
+  [9] List Flash Files (/ffat)
+  [d] Dump Latest Flight Log CSV
+  [0] Toggle Flash CSV Flight Logging
+  [r] Remount / Refresh USB MSC Drive
+  [f] Format 12MB Flash Storage Partition
+  [l] Open LoRa RF Transceiver Diagnostic Menu
+  [h] Show this menu
+--------------------------------------------------
+> 
+[WARN] Timed out waiting for benchmark verdict
+
+[INFO] Done.

@@ -427,6 +427,13 @@ class LinkController {
             // Instantaneous SX1262 signal strength response (signed dBm)
             const rawRssi = (body[1] << 24) >> 24
             if (rawRssi < 0) {
+              // Post-packet silent-gap samples sit at or near the ambient noise floor.
+              // Treat them as noise-floor calibration, not valid packet signal.
+              const noiseGate = Math.max(-100, this.ambientNoiseFloor + 3)
+              if (rawRssi <= noiseGate) {
+                this.ambientNoiseFloor = rawRssi
+                return
+              }
               const snr = Math.min(25, Math.max(-20, Number((rawRssi - this.ambientNoiseFloor).toFixed(1))))
               this.lastDownlinkLink = { rssi: rawRssi, snr }
               t.applyLinkMetrics(rawRssi, snr)

@@ -35,6 +35,10 @@ static uint32_t s_cmdRx = 0;
 static bool s_ackPending = false;
 static AckPacket s_ack;
 
+// LoRa link health for the status LED (capability: status-led-indication).
+static uint32_t s_lastUplinkMs = 0;
+static constexpr uint32_t LORA_LINK_TIMEOUT_MS = 3000;
+
 static void printHelp() {
     Serial.println("# ---------------- ROCKET BLACKBOX FLIGHT TELEMETRY ----------------");
     Serial.println("# [i] Device info (JSON)     [s] Toggle USB JSON stream");
@@ -77,6 +81,7 @@ static void handleUplink() {
     if (len <= 0 || !Telemetry::findCommand(buf, (size_t)len, cmd)) return;
 
     s_cmdRx++;
+    s_lastUplinkMs = millis();  // Any decoded command proves the bidirectional link is alive.
     uint8_t status = 0;
     switch (cmd.cmd) {
         case CMD_PING:      break;
@@ -160,7 +165,15 @@ static void handleSerialCommand(char cmd) {
 
 void loop() {
     GPSDiagnosticsManager::update();
-    PowerManager::updateHeartbeat(500);
+    // Status LED reflects LoRa link state: 1 Hz blink when no valid uplink in
+    // the last 3 s, double-flash heartbeat when the link is alive.
+    PowerManager::setLedState((uint32_t)(millis() - s_lastUplinkMs) < LORA_LINK_TIMEOUT_MS
+                                  ? PowerManager::LedState::Connected
+                                  : PowerManager::LedState::Disconnected);
+    // Button-hold countdown + power-off logic (change: power-off-button:
+    // 600 ms ON / 120 ms OFF blink from 2 s of hold; latch off at 5 s).
+    PowerManager::updateButtonHold();
+    PowerManager::updateLed();
     FlashStorageManager::updateLogger();
     LoRaRadio::service();
 

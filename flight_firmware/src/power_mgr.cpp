@@ -4,6 +4,13 @@
 bool PowerManager::_ledState = false;
 uint32_t PowerManager::_lastHeartbeatMs = 0;
 uint32_t PowerManager::_btnPressStartMs = 0;
+PowerManager::LedState PowerManager::_ledPatternState = LedState::Disconnected;
+uint32_t PowerManager::_ledCycleStartMs = 0;
+PowerManager::HoldState PowerManager::_holdState = HoldState::Idle;
+uint32_t PowerManager::_holdStartMs = 0;
+uint32_t PowerManager::_holdBlinkToggleMs = 0;
+bool PowerManager::_holdBlinkOn = false;
+bool PowerManager::_holdTriggeredThisLoop = false;
 
 void PowerManager::initEarlyPowerHold() {
     pinMode(PIN_PWR_EN, OUTPUT);
@@ -14,7 +21,8 @@ void PowerManager::initHousekeeping() {
     pinMode(PIN_PWR_BTN, INPUT);
     pinMode(PIN_LED, OUTPUT);
     digitalWrite(PIN_LED, LOW);
-    
+    _ledCycleStartMs = millis();
+
     // Set ADC resolution to 12 bits and configure attenuation for 3.3V range
     analogReadResolution(12);
     analogSetPinAttenuation(PIN_BAT_ADC, ADC_11db);
@@ -62,12 +70,100 @@ uint8_t PowerManager::getBatteryPercentage() {
     }
 }
 
-void PowerManager::updateHeartbeat(uint32_t intervalMs) {
+void PowerManager::updateHeartbeat(uint32_t /*intervalMs*/) {
+    // Retained for backward compat; LED output is driven by updateLed() now.
+    updateLed();
+}
+
+void PowerManager::updateButtonHold() {
+    _holdTriggeredThisLoop = false;
     uint32_t now = millis();
-    if (now - _lastHeartbeatMs >= intervalMs) {
-        _lastHeartbeatMs = now;
-        _ledState = !_ledState;
-        digitalWrite(PIN_LED, _ledState ? HIGH : LOW);
+    bool btn = isButtonPressed();
+
+    if (btn && _holdState == HoldState::Idle) {
+        // First sample of a new press: start tracking the hold.
+        _holdStartMs = now;
+        _holdState = HoldState::Hold;
+        _holdBlinkToggleMs = 0;
+        _holdBlinkOn = false;
+        _ledPatternState = LedState::Disconnected; // arbitrary start; countdown overrides output
+    }
+
+    if (_holdState == HoldState::Hold) {
+        uint32_t holdMs = now - _holdStartMs;
+        if (btn) {
+            if (holdMs >= 5000) {
+                // Power off: release the power latch.
+                _holdState = HoldState::Off;
+                _holdTriggeredThisLoop = true;
+                digitalWrite(PIN_LED, HIGH);
+                digitalWrite(PIN_PWR_EN, LOW);
+            } else if (holdMs >= 2000) {
+                // Countdown blink: 60 ms ON, then 120 ms OFF (repeating).
+                if (holdMs - _holdBlinkToggleMs >= ( _holdBlinkOn ? 60 : 120 )) {
+                    _holdBlinkOn = !_holdBlinkOn;
+                    _holdBlinkToggleMs = holdMs;
+                    digitalWrite(PIN_LED, _holdBlinkOn ? HIGH : LOW);
+                }
+            } else {
+                // Before 2 s: no countdown blink; do not disturb link-state LED output in updateLed().
+            }
+        } else {
+            // Button released before 5 s: cancel countdown.
+            _holdState = HoldState::Idle;
+            _holdStartMs = 0;
+        }
+    }
+}
+
+bool PowerManager::wasButtonHoldTriggeredThisLoop() {
+    return _holdTriggeredThisLoop;
+}
+
+void PowerManager::resetButtonHold() {
+    _holdState = HoldState::Idle;
+    _holdStartMs = 0;
+    _holdBlinkToggleMs = 0;
+    _holdBlinkOn = false;
+    _holdTriggeredThisLoop = false;
+}
+
+void PowerManager::setLedState(LedState s) {
+    if (_ledPatternState != s) {
+        _ledPatternState = s;
+        _ledCycleStartMs = millis();
+    }
+}
+
+void PowerManager::updateLed() {
+    // Button-hold countdown blink takes precedence while active.
+    if (_holdState == HoldState::Hold) {
+        uint32_t now = millis();
+        if (now - _holdStartMs >= 2000) {
+            // Countdown phase: 60 ms ON / 120 ms OFF.
+            if (now - _holdBlinkToggleMs >= (_holdBlinkOn ? 60 : 120)) {
+                _holdBlinkOn = !_holdBlinkOn;
+                _holdBlinkToggleMs = now;
+                digitalWrite(PIN_LED, _holdBlinkOn ? HIGH : LOW);
+            }
+            return;
+        }
+    }
+
+    uint32_t now = millis();
+    if (_ledPatternState == LedState::Disconnected) {
+        // 1 Hz square wave (500 ms on / 500 ms off)
+        bool on = ((now % 1000) < 500);
+        digitalWrite(PIN_LED, on ? HIGH : LOW);
+    } else {
+        // Connected: double-flash heartbeat (2x70ms pulses, 70ms gap, then 800ms off) -> ~1010ms cycle
+        uint32_t t = now % 1010;
+        bool on = false;
+        if (t < 70) on = true;           // pulse 1
+        else if (t < 140) on = false;   // gap
+        else if (t < 210) on = true;    // pulse 2
+        else on = false;                // long off
+        digitalWrite(PIN_LED, on ? HIGH : LOW);
     }
 }
 

@@ -1,0 +1,48 @@
+[esptool] Connecting......................................
+[INFO] Capturing boot log from /dev/ttyACM0 ...
+
+Initializing BNO055 9-DOF IMU (Bus 2: Pins 2/1 in Polled Mode)...
+  [INIT] Mode verified: 0x0C (NDOF Fusion Active)
+  [INIT] Status: 0x05 (Error: 0x00)
+  [OK] BNO055 operational at Addr 0x28 (SysStatus: 0x05, Error: 0x00)
+Initializing 4-Bit SDMMC Card Reader...
+  Pins: CLK=14, CMD=21, D0=13, D1=12, D2=17, D3=18
+  [FAIL] SD Card Mount Failed! Check card insertion and 10k pull-ups.
+Initializing BE-166 GPS Receiver (UART: RX=42, TX=41, 1PPS=38)...
+  Probing 115200 baud... [LOCKED]
+  [OK] GPS UART stream detected at 115200 baud.
+
+[LORA] Initializing Semtech SX1262 on RAK3112...
+[LORA] Hardware initialized successfully!
+       Freq: 868.000 MHz | BW: 125.0 kHz | SF: 7 | CR: 4/5 | Sync: 0x12 | Power: 14 dBm
+
+All subsystems initialized.
+
+==================================================
+        ROCKET BLACKBOX DIAGNOSTIC CONSOLE        
+==================================================
+Select a diagnostic command:
+  [1] Run Full Subsystem POST (Power-On Self-Test)
+  [2] Toggle Live Sensor Telemetry Stream (1 Hz)
+  [3] Run SDMMC Storage Benchmark (1 MB R/W)
+  [4] Re-scan Dual I2C Buses
+  [5] Query GPS & 1PPS Timing Status
+  [g] Stream Raw BE-166 NMEA Sentences
+  [p] Probe GPS Bidirectional Command Link
+  [6] Query Power & Battery Health
+  [7] Probe BNO055 Electrical Lines & Ping
+  [e] Run BNO055 Edge-Case Recovery Suite
+  [i] Re-initialize BNO055 & Enter NDOF Fusion
+  [8] Query 12MB Flash & USB MSC Storage
+  [9] List Flash Files (/ffat)
+  [d] Dump Latest Flight Log CSV
+  [0] Toggle Flash CSV Flight Logging
+  [r] Remount / Refresh USB MSC Drive
+  [f] Format 12MB Flash Storage Partition
+  [l] Open LoRa RF Transceiver Diagnostic Menu
+  [h] Show this menu
+--------------------------------------------------
+> 
+
+--- VERDICT ---
+SD: MOUNT FAILED at boot

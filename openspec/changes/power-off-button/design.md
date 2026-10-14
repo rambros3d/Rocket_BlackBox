@@ -1,0 +1,18 @@
+## Design
+- Extend `PowerManager` with a button-hold state machine.
+  - State enum: `None`, `Counting`, `Off`
+  - Hold start is tracked from the first loop in which the button is pressed.
+  - While `Counting`:
+    - If hold duration < 2000 ms: no LED change (link-state LED still applies, or prior pattern restored on cancel).
+    - If 2000 ms <= duration < 5000 ms: LED fast-blink 60 ms ON / 120 ms OFF. The blink is applied on top of `updateLed()` calls, overriding the link-state pattern while active.
+    - If duration >= 5000 ms: drive LED appropriately (last blink state or ON) and release the power latch (`digitalWrite(PIN_PWR_EN, LOW)`) then set state to `Off`.
+- The button-hold logic is called from the flight app loop (or from `loop()` in `power_mgr` if that is preferred). If called from the flight app, provide a method `checkButtonHold()` that returns whether the off was triggered.
+- Because the same LED is shared with the link-state feature, drive the LED scheduling via `updateLed()` each loop. If the button-hold state is active, choose the countdown blink; otherwise fall through to the link-state blink. This keeps one source of truth for LED output.
+- Do not re-implement the existing heartbeat or link-state patterns here; reuse `updateLed()` and `setLedState()` as the LED output methods.
+- The power latch release is a one-shot event; after the latch is released, the MCU will lose power shortly after (current design: GPIO 40 must be held HIGH to maintain power). The off state prevents re-arming.
+- Edge cases:
+  - If the button is held, released, and pressed again later, hold timing restarts from 0.
+  - If the board is powered off by this mechanism, the button-hold state is irrelevant (no further code runs).
+- Radio/LoRa interactions:
+  - No radio or LoRa work is added or changed by this feature.
+  - If the board powers off while LoRa TX is in progress, the existing radio safety behavior (transmit finishes or times out) applies; we do not guarantee graceful radio shutdown here.
